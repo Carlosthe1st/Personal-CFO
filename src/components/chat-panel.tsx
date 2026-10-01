@@ -19,6 +19,7 @@ interface Message {
   text: string
   proposal?: Transaction
   saved?: boolean
+  saveError?: boolean
 }
 
 const suggestions = [
@@ -41,9 +42,11 @@ const categories = [
 export function ChatPanel({
   onInterpret,
   onConfirm,
+  canConfirm = true,
 }: {
   onInterpret: (message: string) => Interpretation
-  onConfirm: (transaction: Transaction) => void
+  onConfirm: (transaction: Transaction) => boolean
+  canConfirm?: boolean
 }) {
   const [input, setInput] = useState('')
   const [messages, setMessages] = useState<Message[]>([])
@@ -70,15 +73,15 @@ export function ChatPanel({
     send(input)
   }
   function confirm(message: Message) {
-    if (!message.proposal) return
-    onConfirm({
+    if (!message.proposal || message.saved || !canConfirm) return
+    const saved = onConfirm({
       ...message.proposal,
       accountingStatus: 'needs_review',
       updatedAt: new Date().toISOString(),
     })
     setMessages((current) =>
       current.map((item) =>
-        item.id === message.id ? { ...item, saved: true } : item,
+        item.id === message.id ? { ...item, saved, saveError: !saved } : item,
       ),
     )
   }
@@ -161,7 +164,7 @@ export function ChatPanel({
                       <label className="proposal-line">
                         <span>Categoria sugerida</span>
                         <select
-                          disabled={message.saved}
+                          disabled={message.saved || !canConfirm}
                           value={message.proposal.category}
                           onChange={(event) =>
                             changeCategory(message.id, event.target.value)
@@ -175,7 +178,7 @@ export function ChatPanel({
                       <div className="proposal-footer">
                         <span>Documento por associar · sujeito a revisão</span>
                         <button
-                          disabled={message.saved}
+                          disabled={message.saved || !canConfirm}
                           onClick={() => confirm(message)}
                         >
                           {message.saved ? (
@@ -189,6 +192,18 @@ export function ChatPanel({
                           )}
                         </button>
                       </div>
+                      {message.saveError && (
+                        <p role="alert">
+                          Não foi possível guardar. O registo ainda não foi
+                          adicionado; tenta novamente.
+                        </p>
+                      )}
+                      {!canConfirm && !message.saved && (
+                        <p role="status">
+                          A gravação está indisponível neste navegador. Os dados
+                          existentes foram preservados.
+                        </p>
+                      )}
                     </div>
                   )}
                 </div>

@@ -105,7 +105,11 @@ export function loadTransactions(fallback: Transaction[]): {
   }
 }
 
-export function saveTransactions(transactions: Transaction[]): boolean {
+export function saveTransactions(
+  transactions: Transaction[],
+  canSave = true,
+): boolean {
+  if (!canSave) return false
   try {
     const existing = localStorage.getItem(STORAGE_KEY)
     if (existing !== null && !decodeStoredData(existing)) return false

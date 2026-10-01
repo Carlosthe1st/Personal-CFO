@@ -49,10 +49,6 @@ export function AppShell() {
       setReady(true)
     })
   }, [])
-  useEffect(() => {
-    if (ready && !persistenceBlocked)
-      queueMicrotask(() => setStorageError(!saveTransactions(transactions)))
-  }, [ready, transactions, persistenceBlocked])
   const own = useMemo(
     () => transactions.filter((item) => item.organizationId === organizationId),
     [transactions, organizationId],
@@ -69,13 +65,22 @@ export function AppShell() {
     setMobileMenu(false)
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
-  function confirm(transaction: Transaction) {
-    setTransactions((current) => [transaction, ...current])
+  function commitTransactions(next: Transaction[]): boolean {
+    const saved = saveTransactions(next, ready && !persistenceBlocked)
+    setStorageError(!saved)
+    if (saved) setTransactions(next)
+    return saved
+  }
+  function confirm(transaction: Transaction): boolean {
+    if (transaction.organizationId !== organizationId) return false
+    if (transactions.some((item) => item.id === transaction.id)) return true
+    if (!commitTransactions([transaction, ...transactions])) return false
     setView('overview')
+    return true
   }
   function markSeen(id: string) {
-    setTransactions((current) =>
-      current.map((item) =>
+    commitTransactions(
+      transactions.map((item) =>
         item.id === id ? acknowledgeTransaction(item, new Date()) : item,
       ),
     )
@@ -254,12 +259,14 @@ export function AppShell() {
                   </p>
                 </div>
                 <div className="greeting-date">
-                  {new Intl.DateTimeFormat('pt-PT', {
-                    timeZone: 'Europe/Lisbon',
-                    day: 'numeric',
-                    month: 'long',
-                    year: 'numeric',
-                  }).format(new Date())}
+                  {ready
+                    ? new Intl.DateTimeFormat('pt-PT', {
+                        timeZone: 'Europe/Lisbon',
+                        day: 'numeric',
+                        month: 'long',
+                        year: 'numeric',
+                      }).format(new Date())
+                    : 'A preparar a demonstração…'}
                 </div>
               </div>
               <div className="hero-card">
@@ -323,7 +330,12 @@ export function AppShell() {
                   title="O teu espaço de conversa"
                 />
               </div>
-              <ChatPanel onInterpret={interpret} onConfirm={confirm} />
+              <ChatPanel
+                key={organizationId}
+                onInterpret={interpret}
+                onConfirm={confirm}
+                canConfirm={ready && !persistenceBlocked}
+              />
               <p className="footer-note">
                 Personal CFO é uma ferramenta de organização financeira. As
                 sugestões não substituem o teu contabilista.

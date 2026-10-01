@@ -67,6 +67,32 @@ describe('decodeStoredData', () => {
 describe('persisted data recovery', () => {
   afterEach(() => vi.unstubAllGlobals())
 
+  it('does not write when the current session has blocked persistence', () => {
+    const entries = new Map<string, string>()
+    vi.stubGlobal('localStorage', {
+      getItem: (key: string) => entries.get(key) ?? null,
+      setItem: (key: string, value: string) => entries.set(key, value),
+    })
+    expect(saveTransactions([], false)).toBe(false)
+    expect(entries.size).toBe(0)
+  })
+
+  it('reports a failed write and preserves the previous saved snapshot', () => {
+    const previous = JSON.stringify({ version: 1, transactions: [] })
+    vi.stubGlobal('localStorage', {
+      getItem: () => previous,
+      setItem: () => {
+        throw new Error('Quota exceeded')
+      },
+    })
+    expect(
+      saveTransactions(
+        createDemoTransactions(new Date('2026-09-30T12:00:00Z')),
+      ),
+    ).toBe(false)
+    expect(localStorage.getItem(STORAGE_KEY)).toBe(previous)
+  })
+
   it.each(['{broken json', '{"version":2,"transactions":[]}'])(
     'preserves unreadable stored data: %s',
     (raw) => {
