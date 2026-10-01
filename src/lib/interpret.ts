@@ -49,7 +49,7 @@ export function interpretMessage(
   now: Date,
 ): Interpretation {
   const amount = parseAmount(message)
-  const isQuestion = /\?|^(quanto|posso|tenho|como|qual|quais)\b/i.test(
+  const isQuestion = /\?|^(quanto|posso|como|qual|quais)\b/i.test(
     message.trim(),
   )
   if (isQuestion || !amount)
@@ -59,12 +59,21 @@ export function interpretMessage(
         ? 'Posso ajudar a organizar lançamentos e mostrar os números do painel. Para questões fiscais, confirma sempre com o teu contabilista.'
         : 'Não consegui identificar um valor. Experimenta escrever, por exemplo: “Paguei 180 € de combustível”.',
     }
-  const type: Transaction['type'] =
+  const isIncome =
     /\b(recebi|recebemos|entrada|fatur[ae]i|vendi|pagou-me|pagaram)\b/i.test(
       message,
     )
-      ? 'income'
-      : 'expense'
+  const isExpense =
+    /\b(paguei|pagamos|pag[aá]mos|pagamento|comprei|compramos|compr[aá]mos|compra|gastei|gastamos|gast[aá]mos|despesa|sa[ií]da|debitado)\b/i.test(
+      message,
+    )
+  if (isIncome === isExpense)
+    return {
+      kind: 'question',
+      reply:
+        'Não ficou claro se foi uma entrada ou saída. Diz-me o que aconteceu, por exemplo: “Recebi 500 €” ou “Paguei 500 €”.',
+    }
+  const type: Transaction['type'] = isIncome ? 'income' : 'expense'
   const category = suggestCategory(message, type)
   const timestamp = now.toISOString()
   const transaction: Transaction = {

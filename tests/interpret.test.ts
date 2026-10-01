@@ -73,6 +73,19 @@ describe('interpretMessage', () => {
     ).toBe('question')
   })
 
+  it.each(['Tenho 500 €', 'Transferi 100 € entre contas', 'Dívida de 300 €'])(
+    'asks for clarification when direction is unclear: %s',
+    (message) => {
+      const result = interpretMessage(
+        message,
+        'org-a',
+        new Date('2026-09-30T12:00:00Z'),
+      )
+      expect(result.kind).toBe('question')
+      expect(result.reply).toContain('entrada ou saída')
+    },
+  )
+
   it('uses the Portuguese calendar date near midnight', () => {
     const result = interpretMessage(
       'Paguei 10 € de software',
