@@ -1,4 +1,5 @@
 import type { Transaction } from '../domain/models'
+import { needsUserReview } from './review'
 import { portugalDate } from './date'
 
 export interface Overview {
@@ -46,11 +47,7 @@ export function calculateOverview(
     income,
     expenses,
     net: income - expenses,
-    reviewCount: own.filter(
-      (item) =>
-        item.accountingStatus === 'needs_review' ||
-        item.accountingStatus === 'suggested',
-    ).length,
+    reviewCount: own.filter(needsUserReview).length,
     categoryTotals: [...categories]
       .map(([category, amount]) => ({ category, amount }))
       .sort((a, b) => b.amount - a.amount),

@@ -39,6 +39,7 @@ export interface Transaction {
   accountingStatus: ReviewStatus
   confidence: number
   notes?: string
+  acknowledgedAt?: string
   createdAt: string
   updatedAt: string
 }

@@ -11,6 +11,7 @@ import {
 import type { Transaction } from '@/domain/models'
 import type { Overview } from '@/lib/finance'
 import { formatEuro } from '@/lib/finance'
+import { needsUserReview } from '@/lib/review'
 import { SectionHeading, StatusPill } from './ui'
 
 const barColors = ['#1a735c', '#b9d9b9', '#89b4a0', '#d7e4d8', '#e9ede6']
@@ -174,7 +175,10 @@ export function TransactionRow({ transaction }: { transaction: Transaction }) {
           )}
         </span>
       </div>
-      <StatusPill status={transaction.accountingStatus} />
+      <StatusPill
+        status={transaction.accountingStatus}
+        acknowledged={Boolean(transaction.acknowledgedAt)}
+      />
       <strong className={`transaction-amount ${income ? 'positive' : ''}`}>
         {income ? '+' : '−'}
         {formatEuro(transaction.amount)}
@@ -190,11 +194,7 @@ export function ReviewQueue({
   transactions: Transaction[]
   onMarkSeen: (id: string) => void
 }) {
-  const pending = transactions.filter(
-    (item) =>
-      item.accountingStatus === 'needs_review' ||
-      item.accountingStatus === 'suggested',
-  )
+  const pending = transactions.filter(needsUserReview)
   return (
     <section className="surface review-card">
       <SectionHeading

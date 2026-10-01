@@ -79,4 +79,20 @@ describe('calculateOverview', () => {
     )
     expect(result).toMatchObject({ income: 0, expenses: 0, net: 0 })
   })
+
+  it('removes an acknowledged item from the user queue without confirming accounting', () => {
+    const acknowledged = transactions.map((item) =>
+      item.id === 'two'
+        ? { ...item, acknowledgedAt: '2026-09-14T10:00:00.000Z' }
+        : item,
+    )
+    const result = calculateOverview(
+      acknowledged,
+      'org-a',
+      10000,
+      new Date('2026-09-30T12:00:00Z'),
+    )
+    expect(result.reviewCount).toBe(0)
+    expect(acknowledged[1].accountingStatus).toBe('needs_review')
+  })
 })

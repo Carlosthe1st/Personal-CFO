@@ -20,18 +20,26 @@ export function SectionHeading({
   )
 }
 
-export function StatusPill({ status }: { status: string }) {
+export function StatusPill({
+  status,
+  acknowledged = false,
+}: {
+  status: string
+  acknowledged?: boolean
+}) {
   const label =
-    status === 'confirmed'
-      ? 'Confirmado por ti'
-      : status === 'accountant_reviewed'
-        ? 'Revisto pelo contabilista'
-        : status === 'suggested'
-          ? 'Sugestão'
-          : 'A rever'
+    acknowledged && (status === 'needs_review' || status === 'suggested')
+      ? 'Visto por ti'
+      : status === 'confirmed'
+        ? 'Confirmado por ti'
+        : status === 'accountant_reviewed'
+          ? 'Revisto pelo contabilista'
+          : status === 'suggested'
+            ? 'Sugestão'
+            : 'A rever'
   return (
     <span
-      className={`status-pill ${status === 'confirmed' || status === 'accountant_reviewed' ? 'status-confirmed' : ''}`}
+      className={`status-pill ${status === 'confirmed' || status === 'accountant_reviewed' || acknowledged ? 'status-confirmed' : ''}`}
     >
       <span className="status-dot" />
       {label}

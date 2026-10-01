@@ -20,6 +20,7 @@ import { organizations, createDemoTransactions } from '@/data/demo'
 import type { Transaction } from '@/domain/models'
 import { calculateOverview, formatEuro } from '@/lib/finance'
 import { interpretMessage, type Interpretation } from '@/lib/interpret'
+import { acknowledgeTransaction } from '@/lib/review'
 import { loadTransactions, saveTransactions } from '@/lib/storage'
 import { ChatPanel } from './chat-panel'
 import { Dashboard, ReviewQueue, TransactionRow } from './dashboard'
@@ -71,13 +72,7 @@ export function AppShell() {
   function markSeen(id: string) {
     setTransactions((current) =>
       current.map((item) =>
-        item.id === id
-          ? {
-              ...item,
-              accountingStatus: 'confirmed',
-              updatedAt: new Date().toISOString(),
-            }
-          : item,
+        item.id === id ? acknowledgeTransaction(item, new Date()) : item,
       ),
     )
   }
