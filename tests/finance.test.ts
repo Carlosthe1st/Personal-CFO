@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { calculateOverview } from '../src/lib/finance'
+import { calculateOverview, formatEuro } from '../src/lib/finance'
 import type { Transaction } from '../src/domain/models'
 
 const transactions: Transaction[] = [
@@ -54,6 +54,10 @@ const transactions: Transaction[] = [
 ]
 
 describe('calculateOverview', () => {
+  it('keeps cents visible in financial amounts', () => {
+    expect(formatEuro(12.5).replace(/\s/g, ' ')).toBe('12,50 €')
+    expect(formatEuro(0.01).replace(/\s/g, ' ')).toBe('0,01 €')
+  })
   it('isolates organizations and totals current month income and expense', () => {
     const result = calculateOverview(
       transactions,
