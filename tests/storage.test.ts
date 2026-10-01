@@ -31,6 +31,7 @@ describe('decodeStoredData', () => {
     { date: '2026-02-30' },
     { createdAt: undefined },
     { updatedAt: 'not-a-date' },
+    { acknowledgedAt: 'garbage' },
     { notes: 123 },
   ])('rejects invalid persisted transaction fields: %j', (invalid) => {
     expect(
@@ -48,6 +49,18 @@ describe('decodeStoredData', () => {
     expect(
       decodeStoredData('{"version":1,"transactions":[{"amount":"wrong"}]}'),
     ).toBeNull()
+  })
+
+  it('restores a valid acknowledgement timestamp', () => {
+    const acknowledged = {
+      ...transaction,
+      acknowledgedAt: '2026-09-30T13:00:00.000Z',
+    }
+    expect(
+      decodeStoredData(
+        JSON.stringify({ version: 1, transactions: [acknowledged] }),
+      )?.transactions,
+    ).toEqual([acknowledged])
   })
 })
 

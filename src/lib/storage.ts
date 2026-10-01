@@ -65,6 +65,7 @@ function isTransaction(value: unknown): value is Transaction {
     item.confidence <= 1 &&
     isTimestamp(item.createdAt) &&
     isTimestamp(item.updatedAt) &&
+    (item.acknowledgedAt === undefined || isTimestamp(item.acknowledgedAt)) &&
     ['subcategory', 'counterparty', 'documentId', 'notes'].every(
       (key) => item[key] === undefined || typeof item[key] === 'string',
     )
