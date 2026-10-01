@@ -59,6 +59,12 @@ export function interpretMessage(
         ? 'Posso ajudar a organizar lançamentos e mostrar os números do painel. Para questões fiscais, confirma sempre com o teu contabilista.'
         : 'Não consegui identificar um valor. Experimenta escrever, por exemplo: “Paguei 180 € de combustível”.',
     }
+  if (/\b(não|nao|nunca|jamais)\b/i.test(message))
+    return {
+      kind: 'question',
+      reply:
+        'Percebi uma negação na tua mensagem. Confirma se houve mesmo uma entrada ou saída antes de registar o movimento.',
+    }
   const isIncome =
     /\b(recebi|recebemos|entrada|fatur[ae]i|vendi|pagou-me|pagaram)\b/i.test(
       message,

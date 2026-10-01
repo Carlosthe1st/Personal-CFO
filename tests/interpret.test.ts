@@ -86,6 +86,18 @@ describe('interpretMessage', () => {
     },
   )
 
+  it.each(['Ainda não paguei 100 €', 'Não recebi 100 €'])(
+    'does not record a negated event: %s',
+    (message) => {
+      const result = interpretMessage(
+        message,
+        'org-a',
+        new Date('2026-09-30T12:00:00Z'),
+      )
+      expect(result.kind).toBe('question')
+    },
+  )
+
   it('uses the Portuguese calendar date near midnight', () => {
     const result = interpretMessage(
       'Paguei 10 € de software',
