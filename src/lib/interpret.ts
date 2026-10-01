@@ -1,0 +1,88 @@
+import type { Transaction } from '../domain/models'
+import { portugalDate } from './date'
+
+export interface Proposal {
+  kind: 'proposal'
+  transaction: Transaction
+  reply: string
+}
+export interface Question {
+  kind: 'question'
+  reply: string
+}
+export type Interpretation = Proposal | Question
+
+function parseAmount(message: string): number | null {
+  const match = message.match(/(?:€\s*([\d.,]+)|([\d.,]+)\s*(?:€|euros?))/i)
+  const raw = match?.[1] ?? match?.[2]
+  if (!raw) return null
+  const lastComma = raw.lastIndexOf(',')
+  const lastDot = raw.lastIndexOf('.')
+  let normalized = raw
+  if (lastComma > lastDot)
+    normalized = raw.replaceAll('.', '').replace(',', '.')
+  else if (lastDot > -1 && raw.length - lastDot - 1 === 3)
+    normalized = raw.replaceAll('.', '')
+  else normalized = raw.replaceAll(',', '')
+  const value = Number(normalized)
+  return Number.isFinite(value) && value > 0 ? value : null
+}
+
+function suggestCategory(message: string, type: Transaction['type']): string {
+  if (type === 'income') return 'Clientes'
+  if (/combust[ií]vel|gasolina|portagem|uber|t[aá]xi/i.test(message))
+    return 'Deslocações'
+  if (/computador|macbook|port[aá]til|equipamento|monitor/i.test(message))
+    return 'Equipamento'
+  if (/software|subscri[cç][aã]o|licen[cç]a/i.test(message)) return 'Software'
+  if (/renda|escrit[oó]rio|aluguer/i.test(message)) return 'Instalações'
+  if (/almo[cç]o|refei[cç][aã]o|restaurante/i.test(message)) return 'Refeições'
+  return 'Outros'
+}
+
+export function interpretMessage(
+  message: string,
+  organizationId: string,
+  now: Date,
+): Interpretation {
+  const amount = parseAmount(message)
+  const isQuestion = /\?|^(quanto|posso|tenho|como|qual|quais)\b/i.test(
+    message.trim(),
+  )
+  if (isQuestion || !amount)
+    return {
+      kind: 'question',
+      reply: isQuestion
+        ? 'Posso ajudar a organizar lançamentos e mostrar os números do painel. Para questões fiscais, confirma sempre com o teu contabilista.'
+        : 'Não consegui identificar um valor. Experimenta escrever, por exemplo: “Paguei 180 € de combustível”.',
+    }
+  const type: Transaction['type'] =
+    /\b(recebi|recebemos|entrada|fatur[ae]i|vendi|pagou-me|pagaram)\b/i.test(
+      message,
+    )
+      ? 'income'
+      : 'expense'
+  const category = suggestCategory(message, type)
+  const timestamp = now.toISOString()
+  const transaction: Transaction = {
+    id: crypto.randomUUID(),
+    organizationId,
+    type,
+    description: message.trim(),
+    amount,
+    currency: 'EUR',
+    date: portugalDate(now),
+    category,
+    source: 'manual',
+    taxStatus: 'needs_review',
+    accountingStatus: 'suggested',
+    confidence: category === 'Outros' ? 0.55 : 0.78,
+    createdAt: timestamp,
+    updatedAt: timestamp,
+  }
+  return {
+    kind: 'proposal',
+    transaction,
+    reply: `A minha sugestão é registar ${type === 'income' ? 'uma entrada' : 'uma saída'} de ${new Intl.NumberFormat('pt-PT', { style: 'currency', currency: 'EUR' }).format(amount)} em “${category}”. Confirma os dados antes de guardar. A classificação contabilística e fiscal necessita de revisão.`,
+  }
+}
