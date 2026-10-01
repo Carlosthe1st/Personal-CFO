@@ -13,17 +13,20 @@ export interface Question {
 export type Interpretation = Proposal | Question
 
 function parseAmount(message: string): number | null {
-  const match = message.match(/(?:€\s*([\d.,]+)|([\d.,]+)\s*(?:€|euros?))/i)
+  const match = message.match(
+    /(?:€\s*([-−+]?\s*[\d.,]+)|(?<![\d.,])([-−+]?\s*[\d.,]+)\s*(?:€|euros?))/i,
+  )
   const raw = match?.[1] ?? match?.[2]
   if (!raw) return null
-  const lastComma = raw.lastIndexOf(',')
-  const lastDot = raw.lastIndexOf('.')
-  let normalized = raw
-  if (lastComma > lastDot)
-    normalized = raw.replaceAll('.', '').replace(',', '.')
-  else if (lastDot > -1 && raw.length - lastDot - 1 === 3)
-    normalized = raw.replaceAll('.', '')
-  else normalized = raw.replaceAll(',', '')
+  const amount = raw.replace(/\s/g, '').replace(/^\+/, '')
+  let normalized: string
+  if (/^\d+(?:,\d{1,2})?$/.test(amount)) normalized = amount.replace(',', '.')
+  else if (/^\d{1,3}(?:\.\d{3})+(?:,\d{1,2})?$/.test(amount))
+    normalized = amount.replaceAll('.', '').replace(',', '.')
+  else if (/^\d+\.\d{1,2}$/.test(amount)) normalized = amount
+  else if (/^\d{1,3}(?:,\d{3})+\.\d{1,2}$/.test(amount))
+    normalized = amount.replaceAll(',', '')
+  else return null
   const value = Number(normalized)
   return Number.isFinite(value) && value > 0 ? value : null
 }

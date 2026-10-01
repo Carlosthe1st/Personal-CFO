@@ -33,6 +33,7 @@ export function AppShell() {
   const [transactions, setTransactions] = useState<Transaction[]>([])
   const [ready, setReady] = useState(false)
   const [storageError, setStorageError] = useState(false)
+  const [persistenceBlocked, setPersistenceBlocked] = useState(false)
   const [view, setView] = useState<View>('overview')
   const [mobileMenu, setMobileMenu] = useState(false)
   const [search, setSearch] = useState('')
@@ -41,14 +42,17 @@ export function AppShell() {
 
   useEffect(() => {
     queueMicrotask(() => {
-      setTransactions(loadTransactions(createDemoTransactions(new Date())))
+      const loaded = loadTransactions(createDemoTransactions(new Date()))
+      setTransactions(loaded.transactions)
+      setPersistenceBlocked(!loaded.canSave)
+      setStorageError(!loaded.canSave)
       setReady(true)
     })
   }, [])
   useEffect(() => {
-    if (ready)
+    if (ready && !persistenceBlocked)
       queueMicrotask(() => setStorageError(!saveTransactions(transactions)))
-  }, [ready, transactions])
+  }, [ready, transactions, persistenceBlocked])
   const own = useMemo(
     () => transactions.filter((item) => item.organizationId === organizationId),
     [transactions, organizationId],
@@ -232,8 +236,9 @@ export function AppShell() {
         <div className="content-wrap">
           {storageError && (
             <div className="storage-warning">
-              Não foi possível guardar neste navegador. Verifica as definições
-              de armazenamento antes de continuar.
+              {persistenceBlocked
+                ? 'Não foi possível ler os dados guardados. Foram preservados e a gravação está suspensa. Verifica o armazenamento antes de continuar.'
+                : 'Não foi possível guardar neste navegador. Verifica as definições de armazenamento antes de continuar.'}
             </div>
           )}
           {view === 'overview' ? (

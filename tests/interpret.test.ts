@@ -2,6 +2,36 @@ import { describe, expect, it } from 'vitest'
 import { interpretMessage } from '../src/lib/interpret'
 
 describe('interpretMessage', () => {
+  it.each([
+    'Paguei -180 €',
+    'Paguei € -180',
+    'Paguei 1.2.3 €',
+    'Paguei 12,345 €',
+  ])(
+    'asks for clarification instead of changing the amount in %s',
+    (message) => {
+      expect(
+        interpretMessage(message, 'org-a', new Date('2026-09-30T12:00:00Z'))
+          .kind,
+      ).toBe('question')
+    },
+  )
+
+  it.each([
+    ['Paguei 1.250,50 €', 1250.5],
+    ['Paguei € 1,250.50', 1250.5],
+    ['Paguei 12,50 euros', 12.5],
+  ])('preserves the amount in %s', (message, amount) => {
+    const result = interpretMessage(
+      message,
+      'org-a',
+      new Date('2026-09-30T12:00:00Z'),
+    )
+    expect(result.kind).toBe('proposal')
+    if (result.kind === 'proposal')
+      expect(result.transaction.amount).toBe(amount)
+  })
+
   it('suggests an expense without claiming fiscal certainty', () => {
     const result = interpretMessage(
       'Paguei 180 € de combustível',
