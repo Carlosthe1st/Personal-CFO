@@ -45,27 +45,36 @@
 - [ ] **Step 1: Write failing schema test.** `tests/accounting-schema.test.ts`:
 
 ```ts
-import { describe, expect, it } from 'vitest';
-import { accounts, journalEntries, journalLines, memberships } from '../src/db/schema';
+import { describe, expect, it } from 'vitest'
+import {
+  accounts,
+  journalEntries,
+  journalLines,
+  memberships,
+} from '../src/db/schema'
 
 describe('accounting schema', () => {
   it('exports organization-scoped tables', () => {
-    expect(accounts).toBeDefined();
-    expect(memberships).toBeDefined();
-    expect(journalEntries).toBeDefined();
-    expect(journalLines).toBeDefined();
-  });
-});
+    expect(accounts).toBeDefined()
+    expect(memberships).toBeDefined()
+    expect(journalEntries).toBeDefined()
+    expect(journalLines).toBeDefined()
+  })
+})
 ```
 
 - [ ] **Step 2: Run `npm test -- tests/accounting-schema.test.ts`; expect FAIL because `src/db/schema.ts` does not exist.**
 - [ ] **Step 3: Install `drizzle-orm`, `postgres`; dev dependency `drizzle-kit`. Add the tables with UUID keys, `organizationId` on all domain rows, membership unique `(organizationId,userId)`, account unique `(organizationId,code)`, journal entry unique `(organizationId,idempotencyKey)`, line check `amount_cents > 0`, side `debit|credit`, and composite foreign keys to prevent cross-organization references. Do not put ledger totals in an editable balance column. Use the following shape for the core tables:**
 
 ```ts
-export type MemberRole = 'owner' | 'admin' | 'editor' | 'reader';
-export type JournalStatus = 'draft' | 'posted';
-export type JournalSide = 'debit' | 'credit';
-export type LedgerLineInput = { accountId: string; side: JournalSide; amountCents: number };
+export type MemberRole = 'owner' | 'admin' | 'editor' | 'reader'
+export type JournalStatus = 'draft' | 'posted'
+export type JournalSide = 'debit' | 'credit'
+export type LedgerLineInput = {
+  accountId: string
+  side: JournalSide
+  amountCents: number
+}
 ```
 
 - [ ] **Step 4: Configure `src/db/client.ts` to read `DATABASE_URL` only on the server, use `postgres` + `drizzle`, and fail closed on missing URL. Configure `drizzle.config.ts`, generate migration with `npx drizzle-kit generate`; review generated SQL for constraints and indexes. Create `tests/helpers/database.ts` that requires `DATABASE_URL_TEST`, applies the generated migration to that database only and truncates test tables between tests. Never point this helper at `DATABASE_URL`. Run `npm test -- tests/accounting-schema.test.ts`, `npm run typecheck`, `npm run lint`; expect PASS.**
@@ -82,11 +91,11 @@ export type LedgerLineInput = { accountId: string; side: JournalSide; amountCent
 - [ ] **Step 3: Install `next-auth`, `@auth/drizzle-adapter` and `nodemailer` (plus its TypeScript declarations). Add Auth.js Drizzle adapter tables (`users`, `authAccounts`, `sessions`, `verificationTokens`) using separate names from the accounting `accounts` table, and configure magic-link login with SMTP. Keep `AUTH_SECRET`, `EMAIL_SERVER`, `EMAIL_FROM` and `DATABASE_URL` server-only. Use database sessions, email addresses unique after normalization, and no auto-membership on sign-in. The auth route exports `GET`/`POST` from Auth.js handlers.**
 
 ```ts
-import NextAuth from 'next-auth';
-import Nodemailer from 'next-auth/providers/nodemailer';
-import { DrizzleAdapter } from '@auth/drizzle-adapter';
-import { db } from './db/client';
-import { users, authAccounts, sessions, verificationTokens } from './db/schema';
+import NextAuth from 'next-auth'
+import Nodemailer from 'next-auth/providers/nodemailer'
+import { DrizzleAdapter } from '@auth/drizzle-adapter'
+import { db } from './db/client'
+import { users, authAccounts, sessions, verificationTokens } from './db/schema'
 
 export const { auth, handlers, signIn, signOut } = NextAuth({
   adapter: DrizzleAdapter(db, {
@@ -96,8 +105,13 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
     verificationTokensTable: verificationTokens,
   }),
   session: { strategy: 'database' },
-  providers: [Nodemailer({ server: process.env.EMAIL_SERVER, from: process.env.EMAIL_FROM })],
-});
+  providers: [
+    Nodemailer({
+      server: process.env.EMAIL_SERVER,
+      from: process.env.EMAIL_FROM,
+    }),
+  ],
+})
 ```
 
 - [ ] **Step 4: Implement `requireMember` with a database query filtering both `userId` and `organizationId`, checking role server-side. Let an authenticated user create an organization and become its owner in one transaction; list only memberships belonging to current user. Route handlers obtain identity through `auth()` and never trust user IDs from the request body. Add tests for no session, unknown org, and missing SMTP/secret; run focused tests and expect PASS.**
@@ -115,11 +129,22 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
 
 ```ts
 function assertBalanced(lines: LedgerLineInput[]): void {
-  if (lines.length < 2 || lines.some((line) => !Number.isSafeInteger(line.amountCents) || line.amountCents <= 0))
-    throw new Error('Invalid journal lines');
-  const debits = lines.filter((line) => line.side === 'debit').reduce((sum, line) => sum + line.amountCents, 0);
-  const credits = lines.filter((line) => line.side === 'credit').reduce((sum, line) => sum + line.amountCents, 0);
-  if (!Number.isSafeInteger(debits) || debits !== credits) throw new Error('Unbalanced journal');
+  if (
+    lines.length < 2 ||
+    lines.some(
+      (line) =>
+        !Number.isSafeInteger(line.amountCents) || line.amountCents <= 0,
+    )
+  )
+    throw new Error('Invalid journal lines')
+  const debits = lines
+    .filter((line) => line.side === 'debit')
+    .reduce((sum, line) => sum + line.amountCents, 0)
+  const credits = lines
+    .filter((line) => line.side === 'credit')
+    .reduce((sum, line) => sum + line.amountCents, 0)
+  if (!Number.isSafeInteger(debits) || debits !== credits)
+    throw new Error('Unbalanced journal')
 }
 ```
 
@@ -141,8 +166,9 @@ const response = await fetch(`/api/organizations/${organizationId}/journal`, {
   method: 'POST',
   headers: { 'content-type': 'application/json' },
   body: JSON.stringify({ date, description, idempotencyKey, lines }),
-});
-if (!response.ok) throw new Error('Não foi possível guardar o lançamento. Tenta novamente.');
+})
+if (!response.ok)
+  throw new Error('Não foi possível guardar o lançamento. Tenta novamente.')
 ```
 
 - [ ] **Step 4: Run focused test, full `npm test`, `npm run lint`, `npm run typecheck`, `npm run build`. Manually exercise sign-in (local SMTP catcher), organization creation, posting, refresh, reader restrictions and missing database. Confirm no path from demo creates real journal entries.**

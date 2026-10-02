@@ -46,13 +46,9 @@
         "accounts_organization_id_organizations_id_fk": {
           "name": "accounts_organization_id_organizations_id_fk",
           "tableFrom": "accounts",
-          "columnsFrom": [
-            "organization_id"
-          ],
+          "columnsFrom": ["organization_id"],
           "tableTo": "organizations",
-          "columnsTo": [
-            "id"
-          ],
+          "columnsTo": ["id"],
           "onUpdate": "no action",
           "onDelete": "no action"
         }
@@ -61,18 +57,12 @@
       "uniqueConstraints": {
         "account_org_code": {
           "name": "account_org_code",
-          "columns": [
-            "organization_id",
-            "code"
-          ],
+          "columns": ["organization_id", "code"],
           "nullsNotDistinct": false
         },
         "account_org_id": {
           "name": "account_org_id",
-          "columns": [
-            "organization_id",
-            "id"
-          ],
+          "columns": ["organization_id", "id"],
           "nullsNotDistinct": false
         }
       },
@@ -134,41 +124,27 @@
         "audit_events_organization_id_organizations_id_fk": {
           "name": "audit_events_organization_id_organizations_id_fk",
           "tableFrom": "audit_events",
-          "columnsFrom": [
-            "organization_id"
-          ],
+          "columnsFrom": ["organization_id"],
           "tableTo": "organizations",
-          "columnsTo": [
-            "id"
-          ],
+          "columnsTo": ["id"],
           "onUpdate": "no action",
           "onDelete": "no action"
         },
         "audit_events_actor_id_users_id_fk": {
           "name": "audit_events_actor_id_users_id_fk",
           "tableFrom": "audit_events",
-          "columnsFrom": [
-            "actor_id"
-          ],
+          "columnsFrom": ["actor_id"],
           "tableTo": "users",
-          "columnsTo": [
-            "id"
-          ],
+          "columnsTo": ["id"],
           "onUpdate": "no action",
           "onDelete": "no action"
         },
         "audit_events_organization_id_entry_id_journal_entries_organization_id_id_fk": {
           "name": "audit_events_organization_id_entry_id_journal_entries_organization_id_id_fk",
           "tableFrom": "audit_events",
-          "columnsFrom": [
-            "organization_id",
-            "entry_id"
-          ],
+          "columnsFrom": ["organization_id", "entry_id"],
           "tableTo": "journal_entries",
-          "columnsTo": [
-            "organization_id",
-            "id"
-          ],
+          "columnsTo": ["organization_id", "id"],
           "onUpdate": "no action",
           "onDelete": "no action"
         }
@@ -255,13 +231,9 @@
         "auth_accounts_user_id_users_id_fk": {
           "name": "auth_accounts_user_id_users_id_fk",
           "tableFrom": "auth_accounts",
-          "columnsFrom": [
-            "user_id"
-          ],
+          "columnsFrom": ["user_id"],
           "tableTo": "users",
-          "columnsTo": [
-            "id"
-          ],
+          "columnsTo": ["id"],
           "onUpdate": "no action",
           "onDelete": "cascade"
         }
@@ -269,10 +241,7 @@
       "compositePrimaryKeys": {
         "auth_accounts_provider_provider_account_id_pk": {
           "name": "auth_accounts_provider_provider_account_id_pk",
-          "columns": [
-            "provider",
-            "provider_account_id"
-          ]
+          "columns": ["provider", "provider_account_id"]
         }
       },
       "uniqueConstraints": {},
@@ -369,26 +338,18 @@
         "journal_entries_organization_id_organizations_id_fk": {
           "name": "journal_entries_organization_id_organizations_id_fk",
           "tableFrom": "journal_entries",
-          "columnsFrom": [
-            "organization_id"
-          ],
+          "columnsFrom": ["organization_id"],
           "tableTo": "organizations",
-          "columnsTo": [
-            "id"
-          ],
+          "columnsTo": ["id"],
           "onUpdate": "no action",
           "onDelete": "no action"
         },
         "journal_entries_actor_id_users_id_fk": {
           "name": "journal_entries_actor_id_users_id_fk",
           "tableFrom": "journal_entries",
-          "columnsFrom": [
-            "actor_id"
-          ],
+          "columnsFrom": ["actor_id"],
           "tableTo": "users",
-          "columnsTo": [
-            "id"
-          ],
+          "columnsTo": ["id"],
           "onUpdate": "no action",
           "onDelete": "no action"
         }
@@ -397,18 +358,12 @@
       "uniqueConstraints": {
         "entry_org_id": {
           "name": "entry_org_id",
-          "columns": [
-            "organization_id",
-            "id"
-          ],
+          "columns": ["organization_id", "id"],
           "nullsNotDistinct": false
         },
         "entry_org_operation": {
           "name": "entry_org_operation",
-          "columns": [
-            "organization_id",
-            "idempotency_key"
-          ],
+          "columns": ["organization_id", "idempotency_key"],
           "nullsNotDistinct": false
         }
       },
@@ -484,30 +439,18 @@
         "journal_lines_organization_id_entry_id_journal_entries_organization_id_id_fk": {
           "name": "journal_lines_organization_id_entry_id_journal_entries_organization_id_id_fk",
           "tableFrom": "journal_lines",
-          "columnsFrom": [
-            "organization_id",
-            "entry_id"
-          ],
+          "columnsFrom": ["organization_id", "entry_id"],
           "tableTo": "journal_entries",
-          "columnsTo": [
-            "organization_id",
-            "id"
-          ],
+          "columnsTo": ["organization_id", "id"],
           "onUpdate": "no action",
           "onDelete": "no action"
         },
         "journal_lines_organization_id_account_id_accounts_organization_id_id_fk": {
           "name": "journal_lines_organization_id_account_id_accounts_organization_id_id_fk",
           "tableFrom": "journal_lines",
-          "columnsFrom": [
-            "organization_id",
-            "account_id"
-          ],
+          "columnsFrom": ["organization_id", "account_id"],
           "tableTo": "accounts",
-          "columnsTo": [
-            "organization_id",
-            "id"
-          ],
+          "columnsTo": ["organization_id", "id"],
           "onUpdate": "no action",
           "onDelete": "no action"
         }
@@ -571,26 +514,18 @@
         "memberships_organization_id_organizations_id_fk": {
           "name": "memberships_organization_id_organizations_id_fk",
           "tableFrom": "memberships",
-          "columnsFrom": [
-            "organization_id"
-          ],
+          "columnsFrom": ["organization_id"],
           "tableTo": "organizations",
-          "columnsTo": [
-            "id"
-          ],
+          "columnsTo": ["id"],
           "onUpdate": "no action",
           "onDelete": "no action"
         },
         "memberships_user_id_users_id_fk": {
           "name": "memberships_user_id_users_id_fk",
           "tableFrom": "memberships",
-          "columnsFrom": [
-            "user_id"
-          ],
+          "columnsFrom": ["user_id"],
           "tableTo": "users",
-          "columnsTo": [
-            "id"
-          ],
+          "columnsTo": ["id"],
           "onUpdate": "no action",
           "onDelete": "no action"
         }
@@ -598,10 +533,7 @@
       "compositePrimaryKeys": {
         "memberships_organization_id_user_id_pk": {
           "name": "memberships_organization_id_user_id_pk",
-          "columns": [
-            "organization_id",
-            "user_id"
-          ]
+          "columns": ["organization_id", "user_id"]
         }
       },
       "uniqueConstraints": {},
@@ -691,13 +623,9 @@
         "sessions_user_id_users_id_fk": {
           "name": "sessions_user_id_users_id_fk",
           "tableFrom": "sessions",
-          "columnsFrom": [
-            "user_id"
-          ],
+          "columnsFrom": ["user_id"],
           "tableTo": "users",
-          "columnsTo": [
-            "id"
-          ],
+          "columnsTo": ["id"],
           "onUpdate": "no action",
           "onDelete": "cascade"
         }
@@ -750,9 +678,7 @@
       "uniqueConstraints": {
         "user_email_unique": {
           "name": "user_email_unique",
-          "columns": [
-            "email"
-          ],
+          "columns": ["email"],
           "nullsNotDistinct": false
         }
       },
@@ -793,10 +719,7 @@
       "compositePrimaryKeys": {
         "verification_tokens_identifier_token_pk": {
           "name": "verification_tokens_identifier_token_pk",
-          "columns": [
-            "identifier",
-            "token"
-          ]
+          "columns": ["identifier", "token"]
         }
       },
       "uniqueConstraints": {},

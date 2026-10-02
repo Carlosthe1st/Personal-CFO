@@ -47,12 +47,8 @@
           "name": "accounts_organization_id_organizations_id_fk",
           "tableFrom": "accounts",
           "tableTo": "organizations",
-          "columnsFrom": [
-            "organization_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["organization_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -62,18 +58,12 @@
         "account_org_code": {
           "name": "account_org_code",
           "nullsNotDistinct": false,
-          "columns": [
-            "organization_id",
-            "code"
-          ]
+          "columns": ["organization_id", "code"]
         },
         "account_org_id": {
           "name": "account_org_id",
           "nullsNotDistinct": false,
-          "columns": [
-            "organization_id",
-            "id"
-          ]
+          "columns": ["organization_id", "id"]
         }
       },
       "policies": {},
@@ -135,12 +125,8 @@
           "name": "audit_events_organization_id_organizations_id_fk",
           "tableFrom": "audit_events",
           "tableTo": "organizations",
-          "columnsFrom": [
-            "organization_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["organization_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -148,12 +134,8 @@
           "name": "audit_events_actor_id_users_id_fk",
           "tableFrom": "audit_events",
           "tableTo": "users",
-          "columnsFrom": [
-            "actor_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["actor_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -161,14 +143,8 @@
           "name": "audit_events_organization_id_entry_id_journal_entries_organization_id_id_fk",
           "tableFrom": "audit_events",
           "tableTo": "journal_entries",
-          "columnsFrom": [
-            "organization_id",
-            "entry_id"
-          ],
-          "columnsTo": [
-            "organization_id",
-            "id"
-          ],
+          "columnsFrom": ["organization_id", "entry_id"],
+          "columnsTo": ["organization_id", "id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -256,12 +232,8 @@
           "name": "auth_accounts_user_id_users_id_fk",
           "tableFrom": "auth_accounts",
           "tableTo": "users",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -269,10 +241,7 @@
       "compositePrimaryKeys": {
         "auth_accounts_provider_provider_account_id_pk": {
           "name": "auth_accounts_provider_provider_account_id_pk",
-          "columns": [
-            "provider",
-            "provider_account_id"
-          ]
+          "columns": ["provider", "provider_account_id"]
         }
       },
       "uniqueConstraints": {},
@@ -370,12 +339,8 @@
           "name": "journal_entries_organization_id_organizations_id_fk",
           "tableFrom": "journal_entries",
           "tableTo": "organizations",
-          "columnsFrom": [
-            "organization_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["organization_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -383,12 +348,8 @@
           "name": "journal_entries_actor_id_users_id_fk",
           "tableFrom": "journal_entries",
           "tableTo": "users",
-          "columnsFrom": [
-            "actor_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["actor_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -398,18 +359,12 @@
         "entry_org_id": {
           "name": "entry_org_id",
           "nullsNotDistinct": false,
-          "columns": [
-            "organization_id",
-            "id"
-          ]
+          "columns": ["organization_id", "id"]
         },
         "entry_org_operation": {
           "name": "entry_org_operation",
           "nullsNotDistinct": false,
-          "columns": [
-            "organization_id",
-            "idempotency_key"
-          ]
+          "columns": ["organization_id", "idempotency_key"]
         }
       },
       "policies": {},
@@ -485,14 +440,8 @@
           "name": "journal_lines_organization_id_entry_id_journal_entries_organization_id_id_fk",
           "tableFrom": "journal_lines",
           "tableTo": "journal_entries",
-          "columnsFrom": [
-            "organization_id",
-            "entry_id"
-          ],
-          "columnsTo": [
-            "organization_id",
-            "id"
-          ],
+          "columnsFrom": ["organization_id", "entry_id"],
+          "columnsTo": ["organization_id", "id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -500,14 +449,8 @@
           "name": "journal_lines_organization_id_account_id_accounts_organization_id_id_fk",
           "tableFrom": "journal_lines",
           "tableTo": "accounts",
-          "columnsFrom": [
-            "organization_id",
-            "account_id"
-          ],
-          "columnsTo": [
-            "organization_id",
-            "id"
-          ],
+          "columnsFrom": ["organization_id", "account_id"],
+          "columnsTo": ["organization_id", "id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -572,12 +515,8 @@
           "name": "memberships_organization_id_organizations_id_fk",
           "tableFrom": "memberships",
           "tableTo": "organizations",
-          "columnsFrom": [
-            "organization_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["organization_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -585,12 +524,8 @@
           "name": "memberships_user_id_users_id_fk",
           "tableFrom": "memberships",
           "tableTo": "users",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -598,10 +533,7 @@
       "compositePrimaryKeys": {
         "memberships_organization_id_user_id_pk": {
           "name": "memberships_organization_id_user_id_pk",
-          "columns": [
-            "organization_id",
-            "user_id"
-          ]
+          "columns": ["organization_id", "user_id"]
         }
       },
       "uniqueConstraints": {},
@@ -692,12 +624,8 @@
           "name": "sessions_user_id_users_id_fk",
           "tableFrom": "sessions",
           "tableTo": "users",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -751,9 +679,7 @@
         "user_email_unique": {
           "name": "user_email_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "email"
-          ]
+          "columns": ["email"]
         }
       },
       "policies": {},
@@ -793,10 +719,7 @@
       "compositePrimaryKeys": {
         "verification_tokens_identifier_token_pk": {
           "name": "verification_tokens_identifier_token_pk",
-          "columns": [
-            "identifier",
-            "token"
-          ]
+          "columns": ["identifier", "token"]
         }
       },
       "uniqueConstraints": {},

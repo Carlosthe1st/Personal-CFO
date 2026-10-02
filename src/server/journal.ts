@@ -158,28 +158,24 @@ export async function postJournal(
         throw new ConflictError()
       return { id: existing.id }
     }
-    await tx
-      .insert(journalLines)
-      .values(
-        input.lines.map((line) => ({
-          ...line,
-          organizationId: input.organizationId,
-          entryId: entry.id,
-        })),
-      )
-    await tx
-      .insert(auditEvents)
-      .values({
+    await tx.insert(journalLines).values(
+      input.lines.map((line) => ({
+        ...line,
         organizationId: input.organizationId,
-        actorId: input.actorId,
         entryId: entry.id,
-        action: 'journal.posted',
-        data: {
-          date: input.date,
-          description: input.description,
-          lines: input.lines,
-        },
-      })
+      })),
+    )
+    await tx.insert(auditEvents).values({
+      organizationId: input.organizationId,
+      actorId: input.actorId,
+      entryId: entry.id,
+      action: 'journal.posted',
+      data: {
+        date: input.date,
+        description: input.description,
+        lines: input.lines,
+      },
+    })
     await tx
       .update(journalEntries)
       .set({ status: 'posted' })

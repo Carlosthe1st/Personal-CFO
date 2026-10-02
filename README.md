@@ -71,7 +71,13 @@ Testes PostgreSQL exigem `DATABASE_URL_TEST` numa base descartável local cujo n
 
 O login de desenvolvimento utiliza Auth.js com sessões PostgreSQL e ligação de acesso por email. Requer `AUTH_SECRET` aleatório com pelo menos 32 caracteres, `AUTH_URL`, `EMAIL_SERVER` e `EMAIL_FROM`. `AUTH_TRUST_HOST=true` só deve ser ativado atrás de um alojamento/proxy que valide o Host. Não são criadas memberships automaticamente ao iniciar sessão: criar uma organização atribui o papel de proprietário, na mesma transação que as contas iniciais. As contas iniciais são exemplos genéricos editáveis, sem pretensão de plano fiscal oficial.
 
-Bloqueio de produção: as versões instaladas de Auth.js/Nodemailer têm advisories de segurança reportadas por `npm audit`; limites de tamanho e validação de email reduzem superfícies, mas não equivalem a resolver todas as advisories. Rever/atualizar estas dependências antes de ativar dados reais. Drizzle Kit também apresenta advisories em dependências de desenvolvimento. Não executar `npm audit fix --force` sem rever incompatibilidades.
+Nodemailer está fixado em 10.0.13, corrigindo as advisories conhecidas ([release upstream](https://github.com/nodemailer/nodemailer/releases/tag/v10.0.13)). Auth.js beta.32 ainda declara peers 7/8; existe um override explícito, validado pelo smoke real de magic link SMTP e sessão. `npm audit` não reporta vulnerabilidades de produção nesta instalação; persistem quatro moderadas na cadeia de desenvolvimento Drizzle Kit/esbuild. Não executar `npm audit fix --force` sem rever incompatibilidades.
+
+`/contabilidade` permite criar organizações, confirmar um lançamento com um débito/crédito equilibrados e consultar o diário. Proprietário/admin podem adicionar utilizadores que já iniciaram sessão e alterar papéis através do formulário Membros; admin não promove nem altera outros admins, e ninguém altera o proprietário. Convites por email, remoção/transferência de propriedade, edição do plano de contas e lançamentos com mais linhas na UI ficam para plano seguinte. A API de diário já aceita várias linhas.
+
+Verificação local: testes PostgreSQL abrangem isolamento, autorização, valores inválidos, atomicidade, repetição concorrente e imutabilidade; UI cobre leitor, criação, repetição após 503 e membros. O build funciona sem configuração: `/` responde 200, contabilidade informa indisponibilidade e API responde 503. Com configuração, anónimo recebe redirect 307 e API 401. Para repetir os smoke HTTP/SMTP, inicia `npm start` em loopback com base descartável e `EMAIL_SERVER=smtp://127.0.0.1:25252`, depois executa `ACCOUNTING_TEST_BASE_URL=http://127.0.0.1:PORT npm test -- tests/accounting-http.test.ts tests/auth-smoke.test.ts`; o teste SMTP abre um catcher local e usa email fictício, não fornecedor externo.
+
+Continua bloqueado o uso real/deploy: requer revisão independente, SMTP real/TLS e limites anti-abuso, backups e restauro comprovado e configuração do host. Não foram feitos deploy nem alterações à aplicação oficial.
 
 ```bash
 DATABASE_URL_TEST=postgres://user:password@127.0.0.1:5432/personal_cfo_test npm test
@@ -79,4 +85,4 @@ DATABASE_URL_TEST=postgres://user:password@127.0.0.1:5432/personal_cfo_test npm 
 
 Este MVP não envia dados a terceiros. A persistência usa `localStorage`, por organização, e não tem conta, sincronização ou backup. Usa dados fictícios para avaliar a experiência. As categorias sugeridas são heurísticas locais; não são decisões fiscais ou contabilísticas. Documentos e voz são pontos de entrada futuros. Mantém segredos apenas em variáveis do servidor, nunca em `NEXT_PUBLIC_`.
 
-O próximo passo técnico é introduzir autenticação e PostgreSQL com Drizzle, seguindo [a decisão de arquitetura](docs/architecture.md).
+O próximo plano deve integrar movimentos simples e correções nesta fundação, seguindo [a decisão de arquitetura](docs/architecture.md).

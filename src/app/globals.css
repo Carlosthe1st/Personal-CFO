@@ -1367,3 +1367,47 @@ select:focus-visible {
     flex-direction: column;
   }
 }
+.accounting-workspace {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 32px 20px;
+}
+.accounting-workspace form,
+.accounting-workspace section {
+  margin: 24px 0;
+  padding: 20px;
+  border: 1px solid #d9e5dc;
+  border-radius: 12px;
+  background: white;
+}
+.accounting-workspace fieldset {
+  border: 0;
+  padding: 0;
+}
+.accounting-workspace label {
+  display: block;
+  margin: 12px 0;
+}
+.accounting-workspace input,
+.accounting-workspace select {
+  display: block;
+  width: 100%;
+  padding: 10px;
+  margin-top: 6px;
+  border: 1px solid #bbcdc0;
+  border-radius: 6px;
+}
+.accounting-workspace button {
+  padding: 10px 16px;
+  border: 1px solid #bbcdc0;
+  border-radius: 6px;
+  background: #eaf5ec;
+  cursor: pointer;
+}
+.accounting-workspace button:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+.accounting-workspace [role='alert'] {
+  color: #923d26;
+}
