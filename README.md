@@ -61,6 +61,18 @@ npm run format:check
 
 ## Segurança e limites
 
+## Fundação contabilística (desenvolvimento)
+
+`/` continua a demonstração local. A base PostgreSQL da contabilidade é independente; não há migração automática de `localStorage`. Usa apenas dados fictícios enquanto autenticação, integração, backups/restauro e revisão de segurança não estiverem aprovados.
+
+Configura `DATABASE_URL` apenas no servidor. Gera alterações com `npm run db:generate` e aplica migrações explicitamente com `npm run db:migrate`; o build nunca migra a base. Faz backup e testa a reposição antes de aplicar migrações fora de desenvolvimento. Não há rollback destrutivo automático.
+
+Testes PostgreSQL exigem `DATABASE_URL_TEST` numa base descartável local cujo nome termine em `_test`. O helper usa exclusivamente essa variável, aplica migrações e limpa tabelas entre testes. Sem a variável, a integração é assinalada como ignorada, não verificada. Nunca forneças credenciais de produção ao processo de testes.
+
+```bash
+DATABASE_URL_TEST=postgres://user:password@127.0.0.1:5432/personal_cfo_test npm test
+```
+
 Este MVP não envia dados a terceiros. A persistência usa `localStorage`, por organização, e não tem conta, sincronização ou backup. Usa dados fictícios para avaliar a experiência. As categorias sugeridas são heurísticas locais; não são decisões fiscais ou contabilísticas. Documentos e voz são pontos de entrada futuros. Mantém segredos apenas em variáveis do servidor, nunca em `NEXT_PUBLIC_`.
 
 O próximo passo técnico é introduzir autenticação e PostgreSQL com Drizzle, seguindo [a decisão de arquitetura](docs/architecture.md).
