@@ -21,11 +21,14 @@
     "lucide-react": "0.484.0",
     "next": "16.3.6",
     "next-auth": "^5.0.0-beta.32",
-    "nodemailer": "^8.0.11",
+    "nodemailer": "10.0.13",
     "postgres": "^3.4.9",
     "react": "19.3.0",
     "react-dom": "19.3.0",
     "server-only": "^0.0.1"
+  },
+  "overrides": {
+    "nodemailer": "$nodemailer"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "4.3.3",

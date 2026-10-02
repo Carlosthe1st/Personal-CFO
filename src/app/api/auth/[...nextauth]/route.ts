@@ -14,7 +14,11 @@ export async function POST(request: NextRequest) {
   if (!authConfigured()) return errorResponse(new Error())
   try {
     return await handlers.POST(
-      new NextRequest(request, { body: await limitedBody(request, 4096) }),
+      new NextRequest(request.url, {
+        method: request.method,
+        headers: request.headers,
+        body: await limitedBody(request, 4096),
+      }),
     )
   } catch (error) {
     return errorResponse(error)

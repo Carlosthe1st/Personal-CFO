@@ -47,8 +47,12 @@ export async function authenticated(
 export async function requestBody(
   request: NextRequest,
 ): Promise<Record<string, unknown>> {
-  if (request.headers.get('origin') !== request.nextUrl.origin)
-    throw new ForbiddenError()
+  const origin = request.headers.get('origin')
+  const host = request.headers.get('host')
+  const expectedOrigin = host
+    ? `${request.nextUrl.protocol}//${host}`
+    : request.nextUrl.origin
+  if (origin !== expectedOrigin) throw new ForbiddenError()
   if (!request.headers.get('content-type')?.startsWith('application/json'))
     throw new InvalidInputError()
   const body: unknown = JSON.parse(await limitedBody(request, 16384))
