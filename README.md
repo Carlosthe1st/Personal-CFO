@@ -69,6 +69,10 @@ Configura `DATABASE_URL` apenas no servidor. Gera alterações com `npm run db:g
 
 Testes PostgreSQL exigem `DATABASE_URL_TEST` numa base descartável local cujo nome termine em `_test`. O helper usa exclusivamente essa variável, aplica migrações e limpa tabelas entre testes. Sem a variável, a integração é assinalada como ignorada, não verificada. Nunca forneças credenciais de produção ao processo de testes.
 
+O login de desenvolvimento utiliza Auth.js com sessões PostgreSQL e ligação de acesso por email. Requer `AUTH_SECRET` aleatório com pelo menos 32 caracteres, `AUTH_URL`, `EMAIL_SERVER` e `EMAIL_FROM`. `AUTH_TRUST_HOST=true` só deve ser ativado atrás de um alojamento/proxy que valide o Host. Não são criadas memberships automaticamente ao iniciar sessão: criar uma organização atribui o papel de proprietário, na mesma transação que as contas iniciais. As contas iniciais são exemplos genéricos editáveis, sem pretensão de plano fiscal oficial.
+
+Bloqueio de produção: as versões instaladas de Auth.js/Nodemailer têm advisories de segurança reportadas por `npm audit`; limites de tamanho e validação de email reduzem superfícies, mas não equivalem a resolver todas as advisories. Rever/atualizar estas dependências antes de ativar dados reais. Drizzle Kit também apresenta advisories em dependências de desenvolvimento. Não executar `npm audit fix --force` sem rever incompatibilidades.
+
 ```bash
 DATABASE_URL_TEST=postgres://user:password@127.0.0.1:5432/personal_cfo_test npm test
 ```
