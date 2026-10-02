@@ -8,6 +8,13 @@
       "when": 1790944092781,
       "tag": "0000_slimy_moonstone",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1790945989483,
+      "tag": "0001_journal_integrity",
+      "breakpoints": true
     }
   ]
 }
