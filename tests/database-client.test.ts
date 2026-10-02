@@ -8,9 +8,9 @@ describe.skipIf(!process.env.DATABASE_URL_TEST)('database connection', () => {
   afterAll(closeDatabase)
 
   it('does not create session prepared statements', async () => {
-    const rows = await getDb().execute(sql`
+    const result = await getDb().execute(sql`
       select count(*)::int as count from pg_prepared_statements
     `)
-    expect(rows[0].count).toBe(0)
+    expect(result.rows[0].count).toBe(0)
   })
 })

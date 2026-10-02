@@ -1,16 +1,22 @@
 import 'server-only'
-import postgres from 'postgres'
-import { drizzle } from 'drizzle-orm/postgres-js'
+import { Pool } from 'pg'
+import { drizzle } from 'drizzle-orm/node-postgres'
 import * as schema from './schema'
 
 let database: ReturnType<typeof createDatabase> | undefined
 function createDatabase(url: string) {
+  const parsed = new URL(url)
+  if (
+    !['localhost', '127.0.0.1', '[::1]'].includes(parsed.hostname) &&
+    parsed.searchParams.get('sslmode') !== 'verify-full'
+  )
+    throw new Error('Verified TLS required')
   return drizzle(
-    postgres(url, {
-      max: 5,
-      idle_timeout: 10,
-      connect_timeout: 5,
-      prepare: false,
+    new Pool({
+      connectionString: url,
+      max: 1,
+      idleTimeoutMillis: 10_000,
+      connectionTimeoutMillis: 5_000,
     }),
     { schema },
   )
