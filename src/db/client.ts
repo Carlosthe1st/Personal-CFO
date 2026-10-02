@@ -6,7 +6,12 @@ import * as schema from './schema'
 let database: ReturnType<typeof createDatabase> | undefined
 function createDatabase(url: string) {
   return drizzle(
-    postgres(url, { max: 5, idle_timeout: 10, connect_timeout: 5 }),
+    postgres(url, {
+      max: 5,
+      idle_timeout: 10,
+      connect_timeout: 5,
+      prepare: false,
+    }),
     { schema },
   )
 }
