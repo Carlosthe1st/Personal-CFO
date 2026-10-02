@@ -67,6 +67,8 @@ npm run format:check
 
 Configura `DATABASE_URL` apenas no servidor. Gera alterações com `npm run db:generate` e aplica migrações explicitamente com `npm run db:migrate`; o build nunca migra a base. Faz backup e testa a reposição antes de aplicar migrações fora de desenvolvimento. Não há rollback destrutivo automático.
 
+O projeto Supabase de desenvolvimento `Personal CFO` (`josqvkfgcbogggefimfd`, `eu-west-1`) é separado do Ebenezer Finance. As quatro migrações em `drizzle/` foram aplicadas e registadas no histórico Drizzle. As dez tabelas têm RLS ativa e não concedem acesso a `anon` nem `authenticated`; a app usa PostgreSQL diretamente, não a Data API nem chaves públicas. A ligação Vercel–Supabase ainda exige uma credencial PostgreSQL própria e configuração de email; não colocar credenciais no repositório.
+
 Testes PostgreSQL exigem `DATABASE_URL_TEST` numa base descartável local cujo nome termine em `_test`. O helper usa exclusivamente essa variável, aplica migrações e limpa tabelas entre testes. Sem a variável, a integração é assinalada como ignorada, não verificada. Nunca forneças credenciais de produção ao processo de testes.
 
 O login de desenvolvimento utiliza Auth.js com sessões PostgreSQL e ligação de acesso por email. Requer `AUTH_SECRET` aleatório com pelo menos 32 caracteres, `AUTH_URL`, `EMAIL_SERVER` e `EMAIL_FROM`. `AUTH_TRUST_HOST=true` só deve ser ativado atrás de um alojamento/proxy que valide o Host. Não são criadas memberships automaticamente ao iniciar sessão: criar uma organização atribui o papel de proprietário, na mesma transação que as contas iniciais. As contas iniciais são exemplos genéricos editáveis, sem pretensão de plano fiscal oficial.
@@ -77,7 +79,7 @@ Nodemailer está fixado em 10.0.13, corrigindo as advisories conhecidas ([releas
 
 Verificação local: testes PostgreSQL abrangem isolamento, autorização, valores inválidos, atomicidade, repetição concorrente e imutabilidade; UI cobre leitor, criação, repetição após 503 e membros. O build funciona sem configuração: `/` responde 200, contabilidade informa indisponibilidade e API responde 503. Com configuração, anónimo recebe redirect 307 e API 401. Para repetir os smoke HTTP/SMTP, inicia `npm start` em loopback com base descartável e `EMAIL_SERVER=smtp://127.0.0.1:25252`, depois executa `ACCOUNTING_TEST_BASE_URL=http://127.0.0.1:PORT npm test -- tests/accounting-http.test.ts tests/auth-smoke.test.ts`; o teste SMTP abre um catcher local e usa email fictício, não fornecedor externo.
 
-Continua bloqueado o uso real/deploy: requer revisão independente, SMTP real/TLS e limites anti-abuso, backups e restauro comprovado e configuração do host. Não foram feitos deploy nem alterações à aplicação oficial.
+Continua bloqueado o uso real/deploy: requer SMTP real/TLS e limites anti-abuso, backups e restauro comprovado e configuração do host. O novo esquema não está ligado à aplicação publicada na Vercel.
 
 ```bash
 DATABASE_URL_TEST=postgres://user:password@127.0.0.1:5432/personal_cfo_test npm test

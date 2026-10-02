@@ -6,6 +6,29 @@ describe.skipIf(!process.env.DATABASE_URL_TEST)(
   () => {
     beforeAll(prepareDatabase)
     afterAll(closeDatabase)
+    it('enables row-level security on every accounting table', async () => {
+      const rows = await testSql`
+        select c.relname, c.relrowsecurity
+        from pg_class c join pg_namespace n on n.oid = c.relnamespace
+        where n.nspname = 'public' and c.relkind = 'r'
+          and c.relname in ('users', 'auth_accounts', 'sessions', 'verification_tokens', 'organizations', 'memberships', 'accounts', 'journal_entries', 'journal_lines', 'audit_events')
+      `
+      expect(rows).toHaveLength(10)
+      expect(rows.every((row) => row.relrowsecurity)).toBe(true)
+    })
+    it('pins the search path of journal trigger functions', async () => {
+      const rows = await testSql`
+        select p.proname, p.proconfig
+        from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+        where n.nspname = 'public' and p.proname in ('protect_journal_entry', 'protect_journal_line')
+      `
+      expect(rows).toHaveLength(2)
+      expect(
+        rows.every((row) =>
+          row.proconfig?.includes('search_path=pg_catalog, public, pg_temp'),
+        ),
+      ).toBe(true)
+    })
     it('rejects a journal line referencing an account in another organization', async () => {
       const [a] =
         await testSql`insert into organizations (name) values ('A') returning id`

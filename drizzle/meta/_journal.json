@@ -15,6 +15,20 @@
       "when": 1790945989483,
       "tag": "0001_journal_integrity",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1790958062574,
+      "tag": "0002_supabase_security",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1790958227982,
+      "tag": "0003_pin_journal_search_path",
+      "breakpoints": true
     }
   ]
 }
