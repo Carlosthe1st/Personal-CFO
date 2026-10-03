@@ -29,6 +29,13 @@
       "when": 1790958227982,
       "tag": "0003_pin_journal_search_path",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1791064375631,
+      "tag": "0004_mean_mephistopheles",
+      "breakpoints": true
     }
   ]
 }

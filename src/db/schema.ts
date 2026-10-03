@@ -213,3 +213,11 @@ export const verificationTokens = pgTable(
   },
   (t) => [primaryKey({ columns: [t.identifier, t.token] })],
 )
+
+export const loginRateLimits = pgTable('login_rate_limits', {
+  keyHash: text('key_hash').primaryKey(),
+  windowStart: timestamp('window_start', { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+  attempts: integer('attempts').notNull().default(1),
+})
