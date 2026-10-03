@@ -19,5 +19,19 @@ describe.skipIf(!process.env.DATABASE_URL_TEST)(
       await testSql`update login_rate_limits set window_start = now() - interval '16 minutes' where key_hash = 'test-hash'`
       expect(await consumeLoginAttempt('test-hash')).toBe(1)
     })
+
+    it('removes expired tracking rows in bounded batches', async () => {
+      await testSql`
+        insert into login_rate_limits (key_hash, window_start, attempts)
+        select 'expired-' || value, now() - interval '2 days', 1
+        from generate_series(1, 120) as value
+      `
+      expect(await consumeLoginAttempt('active-key')).toBe(1)
+      const [remaining] = await testSql`
+        select count(*)::int as count from login_rate_limits
+        where window_start < now() - interval '1 day'
+      `
+      expect(remaining.count).toBe(20)
+    })
   },
 )

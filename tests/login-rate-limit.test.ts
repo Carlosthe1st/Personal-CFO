@@ -72,5 +72,6 @@ describe('email login rate limit', () => {
         )
       )?.status,
     ).toBe(429)
+    expect(attempts.size).toBe(11)
   })
 })

@@ -1,0 +1,1 @@
+CREATE INDEX "login_limits_window" ON "login_rate_limits" USING btree ("window_start");
