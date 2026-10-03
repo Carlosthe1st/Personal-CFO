@@ -87,11 +87,19 @@ export const accounts = pgTable(
       .references(() => organizations.id),
     code: text('code').notNull(),
     name: text('name').notNull(),
+    kind: text('kind')
+      .$type<'cash' | 'bank' | 'income' | 'expense' | 'other'>()
+      .notNull()
+      .default('other'),
     active: boolean('active').notNull().default(true),
   },
   (t) => [
     unique('account_org_code').on(t.organizationId, t.code),
     unique('account_org_id').on(t.organizationId, t.id),
+    check(
+      'account_kind',
+      sql`${t.kind} in ('cash','bank','income','expense','other')`,
+    ),
   ],
 )
 
@@ -172,6 +180,56 @@ export const auditEvents = pgTable(
       columns: [t.organizationId, t.entryId],
       foreignColumns: [journalEntries.organizationId, journalEntries.id],
     }),
+  ],
+)
+
+export type MovementType = 'income' | 'expense' | 'transfer'
+export const movements = pgTable(
+  'movements',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    organizationId: uuid('organization_id')
+      .notNull()
+      .references(() => organizations.id),
+    actorId: uuid('actor_id')
+      .notNull()
+      .references(() => users.id),
+    journalEntryId: uuid('journal_entry_id').notNull(),
+    type: text('type').$type<MovementType>().notNull(),
+    date: date('date').notNull(),
+    description: text('description').notNull(),
+    amountCents: bigint('amount_cents', { mode: 'number' }).notNull(),
+    financialAccountId: uuid('financial_account_id').notNull(),
+    counterAccountId: uuid('counter_account_id').notNull(),
+    idempotencyKey: text('idempotency_key').notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [
+    unique('movement_operation').on(t.organizationId, t.idempotencyKey),
+    unique('movement_entry').on(t.journalEntryId),
+    foreignKey({
+      columns: [t.organizationId, t.journalEntryId],
+      foreignColumns: [journalEntries.organizationId, journalEntries.id],
+    }),
+    foreignKey({
+      columns: [t.organizationId, t.financialAccountId],
+      foreignColumns: [accounts.organizationId, accounts.id],
+    }),
+    foreignKey({
+      columns: [t.organizationId, t.counterAccountId],
+      foreignColumns: [accounts.organizationId, accounts.id],
+    }),
+    check('movement_type', sql`${t.type} in ('income','expense','transfer')`),
+    check(
+      'movement_cents',
+      sql`${t.amountCents} between 1 and 9007199254740991`,
+    ),
+    check(
+      'movement_distinct_accounts',
+      sql`${t.financialAccountId} <> ${t.counterAccountId}`,
+    ),
   ],
 )
 

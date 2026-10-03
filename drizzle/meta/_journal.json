@@ -43,6 +43,27 @@
       "when": 1791064975046,
       "tag": "0005_lazy_triton",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1791065519141,
+      "tag": "0006_shallow_young_avengers",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1791065591686,
+      "tag": "0007_curvy_vapor",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1791065690580,
+      "tag": "0008_classify_starter_accounts",
+      "breakpoints": true
     }
   ]
 }

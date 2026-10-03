@@ -44,6 +44,16 @@ export async function postJournal(
     'admin',
     'editor',
   ])
+  return getDb().transaction((tx) => postJournalInTransaction(tx, input))
+}
+
+export type JournalTransaction = Parameters<
+  Parameters<ReturnType<typeof getDb>['transaction']>[0]
+>[0]
+export async function postJournalInTransaction(
+  tx: JournalTransaction,
+  input: JournalInput,
+): Promise<{ id: string }> {
   const calendarDate = new Date(`${input.date}T00:00:00.000Z`)
   if (
     typeof input.date !== 'string' ||
@@ -79,109 +89,106 @@ export async function postJournal(
   }
   if (debits !== credits || debits > BigInt(Number.MAX_SAFE_INTEGER))
     throw new InvalidInputError()
-  return getDb().transaction(async (tx) => {
-    const [member] = await tx
-      .select()
-      .from(memberships)
-      .where(
-        and(
-          eq(memberships.userId, input.actorId),
-          eq(memberships.organizationId, input.organizationId),
-        ),
-      )
-      .for('share')
-    if (!member || !['owner', 'admin', 'editor'].includes(member.role))
-      throw new ForbiddenError()
-    const selected = await tx
-      .select()
-      .from(accounts)
-      .where(
-        and(
-          eq(accounts.organizationId, input.organizationId),
-          inArray(
-            accounts.id,
-            input.lines.map((line) => line.accountId),
-          ),
-          eq(accounts.active, true),
-        ),
-      )
-      .for('share')
-    if (
-      new Set(input.lines.map((line) => line.accountId)).size !==
-      selected.length
+  const [member] = await tx
+    .select()
+    .from(memberships)
+    .where(
+      and(
+        eq(memberships.userId, input.actorId),
+        eq(memberships.organizationId, input.organizationId),
+      ),
     )
-      throw new ForbiddenError()
-    const requestHash = createHash('sha256')
-      .update(
-        JSON.stringify({
-          organizationId: input.organizationId,
-          actorId: input.actorId,
-          date: input.date,
-          description: input.description,
-          lines: input.lines.map((line) => ({
-            accountId: line.accountId,
-            side: line.side,
-            amountCents: line.amountCents,
-          })),
-        }),
-      )
-      .digest('hex')
-    const [entry] = await tx
-      .insert(journalEntries)
-      .values({
+    .for('share')
+  if (!member || !['owner', 'admin', 'editor'].includes(member.role))
+    throw new ForbiddenError()
+  const selected = await tx
+    .select()
+    .from(accounts)
+    .where(
+      and(
+        eq(accounts.organizationId, input.organizationId),
+        inArray(
+          accounts.id,
+          input.lines.map((line) => line.accountId),
+        ),
+        eq(accounts.active, true),
+      ),
+    )
+    .for('share')
+  if (
+    new Set(input.lines.map((line) => line.accountId)).size !== selected.length
+  )
+    throw new ForbiddenError()
+  const requestHash = createHash('sha256')
+    .update(
+      JSON.stringify({
         organizationId: input.organizationId,
         actorId: input.actorId,
         date: input.date,
         description: input.description,
-        idempotencyKey: input.idempotencyKey,
-        requestHash,
-      })
-      .onConflictDoNothing({
-        target: [journalEntries.organizationId, journalEntries.idempotencyKey],
-      })
-      .returning({ id: journalEntries.id })
-    if (!entry) {
-      const [existing] = await tx
-        .select()
-        .from(journalEntries)
-        .where(
-          and(
-            eq(journalEntries.organizationId, input.organizationId),
-            eq(journalEntries.idempotencyKey, input.idempotencyKey),
-          ),
-        )
-      if (
-        !existing ||
-        existing.status !== 'posted' ||
-        existing.requestHash !== requestHash
-      )
-        throw new ConflictError()
-      return { id: existing.id }
-    }
-    await tx.insert(journalLines).values(
-      input.lines.map((line) => ({
-        ...line,
-        organizationId: input.organizationId,
-        entryId: entry.id,
-      })),
+        lines: input.lines.map((line) => ({
+          accountId: line.accountId,
+          side: line.side,
+          amountCents: line.amountCents,
+        })),
+      }),
     )
-    await tx.insert(auditEvents).values({
+    .digest('hex')
+  const [entry] = await tx
+    .insert(journalEntries)
+    .values({
       organizationId: input.organizationId,
       actorId: input.actorId,
-      entryId: entry.id,
-      action: 'journal.posted',
-      data: {
-        date: input.date,
-        description: input.description,
-        lines: input.lines,
-      },
+      date: input.date,
+      description: input.description,
+      idempotencyKey: input.idempotencyKey,
+      requestHash,
     })
-    await tx
-      .update(journalEntries)
-      .set({ status: 'posted' })
-      .where(eq(journalEntries.id, entry.id))
-    return entry
+    .onConflictDoNothing({
+      target: [journalEntries.organizationId, journalEntries.idempotencyKey],
+    })
+    .returning({ id: journalEntries.id })
+  if (!entry) {
+    const [existing] = await tx
+      .select()
+      .from(journalEntries)
+      .where(
+        and(
+          eq(journalEntries.organizationId, input.organizationId),
+          eq(journalEntries.idempotencyKey, input.idempotencyKey),
+        ),
+      )
+    if (
+      !existing ||
+      existing.status !== 'posted' ||
+      existing.requestHash !== requestHash
+    )
+      throw new ConflictError()
+    return { id: existing.id }
+  }
+  await tx.insert(journalLines).values(
+    input.lines.map((line) => ({
+      ...line,
+      organizationId: input.organizationId,
+      entryId: entry.id,
+    })),
+  )
+  await tx.insert(auditEvents).values({
+    organizationId: input.organizationId,
+    actorId: input.actorId,
+    entryId: entry.id,
+    action: 'journal.posted',
+    data: {
+      date: input.date,
+      description: input.description,
+      lines: input.lines,
+    },
   })
+  await tx
+    .update(journalEntries)
+    .set({ status: 'posted' })
+    .where(eq(journalEntries.id, entry.id))
+  return entry
 }
 export async function listJournal(
   organizationId: string,

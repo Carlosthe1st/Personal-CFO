@@ -1,0 +1,2 @@
+ALTER TABLE "accounts" ADD COLUMN "kind" text DEFAULT 'other' NOT NULL;--> statement-breakpoint
+ALTER TABLE "accounts" ADD CONSTRAINT "account_kind" CHECK ("accounts"."kind" in ('cash','bank','income','expense','other'));

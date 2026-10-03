@@ -25,13 +25,19 @@ export async function createOrganization(ownerId: string, name: string) {
       role: 'owner',
     })
     await tx.insert(accounts).values(
-      [
-        { code: 'CAIXA', name: 'Caixa' },
-        { code: 'BANCO', name: 'Banco' },
-        { code: 'DESPESA', name: 'Despesas' },
-        { code: 'RENDIMENTO', name: 'Rendimentos' },
-        { code: 'ABERTURA', name: 'Contrapartida de abertura' },
-      ].map((account) => ({ ...account, organizationId: organization.id })),
+      (
+        [
+          { code: 'CAIXA', name: 'Caixa', kind: 'cash' },
+          { code: 'BANCO', name: 'Banco', kind: 'bank' },
+          { code: 'DESPESA', name: 'Despesas', kind: 'expense' },
+          { code: 'RENDIMENTO', name: 'Rendimentos', kind: 'income' },
+          {
+            code: 'ABERTURA',
+            name: 'Contrapartida de abertura',
+            kind: 'other',
+          },
+        ] as const
+      ).map((account) => ({ ...account, organizationId: organization.id })),
     )
     return organization
   })
@@ -128,6 +134,7 @@ export async function listAccounts(organizationId: string, userId: string) {
       code: accounts.code,
       name: accounts.name,
       active: accounts.active,
+      kind: accounts.kind,
     })
     .from(accounts)
     .where(eq(accounts.organizationId, organizationId))
