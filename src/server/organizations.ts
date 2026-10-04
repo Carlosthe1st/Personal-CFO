@@ -34,7 +34,7 @@ export async function createOrganization(ownerId: string, name: string) {
           {
             code: 'ABERTURA',
             name: 'Contrapartida de abertura',
-            kind: 'other',
+            kind: 'equity',
           },
         ] as const
       ).map((account) => ({ ...account, organizationId: organization.id })),
@@ -135,6 +135,7 @@ export async function listAccounts(organizationId: string, userId: string) {
       name: accounts.name,
       active: accounts.active,
       kind: accounts.kind,
+      version: accounts.version,
     })
     .from(accounts)
     .where(eq(accounts.organizationId, organizationId))

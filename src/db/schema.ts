@@ -18,6 +18,15 @@ import {
 import type { AdapterAccount } from '@auth/core/adapters'
 
 export type MemberRole = 'owner' | 'admin' | 'editor' | 'reader'
+export type AccountKind =
+  | 'cash'
+  | 'bank'
+  | 'asset'
+  | 'liability'
+  | 'equity'
+  | 'income'
+  | 'expense'
+  | 'other'
 export type JournalStatus = 'draft' | 'posted'
 export type JournalSide = 'debit' | 'credit'
 export type LedgerLineInput = {
@@ -87,18 +96,16 @@ export const accounts = pgTable(
       .references(() => organizations.id),
     code: text('code').notNull(),
     name: text('name').notNull(),
-    kind: text('kind')
-      .$type<'cash' | 'bank' | 'income' | 'expense' | 'other'>()
-      .notNull()
-      .default('other'),
+    kind: text('kind').$type<AccountKind>().notNull().default('other'),
     active: boolean('active').notNull().default(true),
+    version: integer('version').notNull().default(0),
   },
   (t) => [
     unique('account_org_code').on(t.organizationId, t.code),
     unique('account_org_id').on(t.organizationId, t.id),
     check(
       'account_kind',
-      sql`${t.kind} in ('cash','bank','income','expense','other')`,
+      sql`${t.kind} in ('cash','bank','asset','liability','equity','income','expense','other')`,
     ),
   ],
 )
