@@ -54,6 +54,54 @@ export async function postJournalInTransaction(
   tx: JournalTransaction,
   input: JournalInput,
 ): Promise<{ id: string }> {
+  return writeJournal(tx, input, false)
+}
+export async function reverseJournalInTransaction(
+  tx: JournalTransaction,
+  input: { organizationId: string; actorId: string; entryId: string },
+) {
+  const [original] = await tx
+    .select()
+    .from(journalEntries)
+    .where(
+      and(
+        eq(journalEntries.organizationId, input.organizationId),
+        eq(journalEntries.id, input.entryId),
+        eq(journalEntries.status, 'posted'),
+      ),
+    )
+  if (!original) throw new ForbiddenError()
+  const lines = await tx
+    .select()
+    .from(journalLines)
+    .where(
+      and(
+        eq(journalLines.organizationId, input.organizationId),
+        eq(journalLines.entryId, input.entryId),
+      ),
+    )
+  return writeJournal(
+    tx,
+    {
+      organizationId: input.organizationId,
+      actorId: input.actorId,
+      date: original.date,
+      description: `Estorno: ${original.description}`.slice(0, 500),
+      idempotencyKey: `reversal_${original.id}`,
+      lines: lines.map((line) => ({
+        accountId: line.accountId,
+        side: line.side === 'debit' ? 'credit' : 'debit',
+        amountCents: line.amountCents,
+      })),
+    },
+    true,
+  )
+}
+async function writeJournal(
+  tx: JournalTransaction,
+  input: JournalInput,
+  allowInactive: boolean,
+): Promise<{ id: string }> {
   const calendarDate = new Date(`${input.date}T00:00:00.000Z`)
   if (
     typeof input.date !== 'string' ||
@@ -111,7 +159,7 @@ export async function postJournalInTransaction(
           accounts.id,
           input.lines.map((line) => line.accountId),
         ),
-        eq(accounts.active, true),
+        allowInactive ? undefined : eq(accounts.active, true),
       ),
     )
     .for('share')

@@ -190,6 +190,47 @@ export const auditEvents = pgTable(
   ],
 )
 
+export const movementChanges = pgTable(
+  'movement_changes',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    organizationId: uuid('organization_id').notNull(),
+    movementId: uuid('movement_id').notNull(),
+    actorId: uuid('actor_id')
+      .notNull()
+      .references(() => users.id),
+    reversalEntryId: uuid('reversal_entry_id').notNull(),
+    replacementOrganizationId: uuid('replacement_organization_id'),
+    replacementMovementId: uuid('replacement_movement_id'),
+    idempotencyKey: text('idempotency_key').notNull(),
+    requestHash: text('request_hash').notNull(),
+    reason: text('reason').notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [
+    unique('movement_change_original').on(t.movementId),
+    unique('movement_change_operation').on(t.organizationId, t.idempotencyKey),
+    foreignKey({
+      columns: [t.organizationId, t.movementId],
+      foreignColumns: [movements.organizationId, movements.id],
+    }),
+    foreignKey({
+      columns: [t.organizationId, t.reversalEntryId],
+      foreignColumns: [journalEntries.organizationId, journalEntries.id],
+    }),
+    foreignKey({
+      columns: [t.replacementOrganizationId, t.replacementMovementId],
+      foreignColumns: [movements.organizationId, movements.id],
+    }),
+    check(
+      'movement_change_pair',
+      sql`(${t.replacementOrganizationId} is null) = (${t.replacementMovementId} is null)`,
+    ),
+  ],
+)
+
 export type MovementType = 'income' | 'expense' | 'transfer'
 export const movements = pgTable(
   'movements',
@@ -216,6 +257,7 @@ export const movements = pgTable(
   (t) => [
     unique('movement_operation').on(t.organizationId, t.idempotencyKey),
     unique('movement_entry').on(t.journalEntryId),
+    unique('movement_org_id').on(t.organizationId, t.id),
     foreignKey({
       columns: [t.organizationId, t.journalEntryId],
       foreignColumns: [journalEntries.organizationId, journalEntries.id],
