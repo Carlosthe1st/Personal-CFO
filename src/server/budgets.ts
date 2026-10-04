@@ -328,9 +328,10 @@ export async function getBudget(
         .from(organizations)
         .where(eq(organizations.id, organizationId))
       const month = String(organization.month).padStart(2, '0')
+      const fiscalMonth = sql<number>`((extract(month from ${journalEntries.date})::integer - ${organization.month} + 12) % 12) + 1`
       const actuals = await tx
         .select({
-          month: sql<number>`extract(month from ${journalEntries.date})::integer`,
+          month: fiscalMonth,
           accountId: journalLines.accountId,
           realizedCents: sql<string>`sum(case when ${journalLines.side}='debit' then ${journalLines.amountCents} else -${journalLines.amountCents} end)::text`,
         })
@@ -398,6 +399,7 @@ export async function getBudget(
         warnings.push('deficit')
       return {
         year,
+        fiscalYearStartMonth: organization.month,
         version: budget?.version ?? 0,
         annualCents,
         plannedCents: planned.toString(),

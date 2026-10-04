@@ -115,6 +115,48 @@ describe.skipIf(!process.env.DATABASE_URL_TEST)('annual budgets', () => {
       warnings: [],
     })
   })
+  it('maps spending to fiscal months when the exercise starts in April', async () => {
+    const input = await setup()
+    await testSql`update organizations set fiscal_year_start_month = 4 where id = ${input.organizationId}`
+    await reviseBudget({
+      ...input,
+      annualCents: 30000,
+      cells: [
+        { month: 1, accountId: input.expenseId, plannedCents: 10000 },
+        { month: 10, accountId: input.expenseId, plannedCents: 20000 },
+      ],
+    })
+    const bank = (await listAccounts(input.organizationId, input.actorId)).find(
+      (account) => account.code === 'BANCO',
+    )!.id
+    for (const [date, amountCents] of [
+      ['2026-04-04', 18000],
+      ['2027-01-04', 5000],
+    ] as const)
+      await createMovement({
+        ...input,
+        type: 'expense',
+        date,
+        description: 'Fiscal spend',
+        amountCents,
+        financialAccountId: bank,
+        counterAccountId: input.expenseId,
+        idempotencyKey: `spend-${date}`,
+      })
+    const budget = await getBudget(input.organizationId, input.actorId, 2026)
+    expect(budget.cells).toEqual([
+      expect.objectContaining({
+        month: 1,
+        realizedCents: '18000',
+        availableCents: '-8000',
+      }),
+      expect.objectContaining({
+        month: 10,
+        realizedCents: '5000',
+        availableCents: '15000',
+      }),
+    ])
+  })
   it('transfers 30 EUR between months with unchanged annual total and before/after history', async () => {
     const input = await setup()
     await reviseBudget({
