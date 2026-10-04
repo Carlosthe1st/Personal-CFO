@@ -25,6 +25,67 @@ const entry = {
   events: [{ action: 'journal.posted' }],
 }
 describe('accounting workspace', () => {
+  it('records a simple expense through the movements API', async () => {
+    const user = userEvent.setup()
+    let payload: Record<string, unknown> | undefined
+    vi.stubGlobal('fetch', async (url: string, init?: RequestInit) => {
+      if (url.endsWith('/movements') && init?.method === 'POST') {
+        payload = JSON.parse(init.body as string)
+        return Response.json({ id: 'movement-a' }, { status: 201 })
+      }
+      return Response.json(
+        url.endsWith('/accounts')
+          ? [
+              {
+                id: 'cash',
+                code: 'CAIXA',
+                name: 'Caixa',
+                kind: 'cash',
+                active: true,
+              },
+              {
+                id: 'expense',
+                code: 'DESPESA',
+                name: 'Despesas',
+                kind: 'expense',
+                active: true,
+              },
+            ]
+          : [],
+      )
+    })
+    render(
+      <AccountingWorkspace
+        organizations={[{ ...organizations[0], role: 'editor' }]}
+      />,
+    )
+    await user.selectOptions(
+      await screen.findByLabelText('Tipo de movimento'),
+      'expense',
+    )
+    await user.type(screen.getByLabelText('Descrição do movimento'), 'Material')
+    await user.type(
+      screen.getByLabelText('Valor do movimento em EUR'),
+      '180,00',
+    )
+    await user.selectOptions(
+      screen.getByLabelText('Conta de origem ou destino'),
+      'cash',
+    )
+    await user.selectOptions(
+      screen.getByLabelText('Categoria ou conta de transferência'),
+      'expense',
+    )
+    await user.click(screen.getByRole('button', { name: 'Guardar movimento' }))
+    expect(payload).toMatchObject({
+      type: 'expense',
+      description: 'Material',
+      amountCents: 18000,
+      financialAccountId: 'cash',
+      counterAccountId: 'expense',
+    })
+    expect(payload?.idempotencyKey).toEqual(expect.any(String))
+  })
   it('lets an owner add a registered member with a selected role', async () => {
     const user = userEvent.setup()
     const submitted: unknown[] = []

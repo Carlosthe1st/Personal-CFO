@@ -8,7 +8,13 @@ import { formatEuro } from '../lib/finance'
 import { portugalDate } from '../lib/date'
 
 type Organization = { id: string; name: string; role: MemberRole }
-type Account = { id: string; code: string; name: string; active: boolean }
+type Account = {
+  id: string
+  code: string
+  name: string
+  active: boolean
+  kind?: 'cash' | 'bank' | 'income' | 'expense' | 'other'
+}
 
 async function read<T>(url: string, signal: AbortSignal): Promise<T> {
   const response = await fetch(url, { signal, cache: 'no-store' })
@@ -164,12 +170,20 @@ export function AccountingWorkspace({
           {ownOrganizations.find((org) => org.id === organizationId)?.role !==
             'reader' &&
             organizationId && (
-              <JournalForm
-                key={organizationId}
-                organizationId={organizationId}
-                accounts={accounts}
-                onSaved={() => setRevision((value) => value + 1)}
-              />
+              <>
+                <MovementForm
+                  key={`movement-${organizationId}`}
+                  organizationId={organizationId}
+                  accounts={accounts}
+                  onSaved={() => setRevision((value) => value + 1)}
+                />
+                <JournalForm
+                  key={organizationId}
+                  organizationId={organizationId}
+                  accounts={accounts}
+                  onSaved={() => setRevision((value) => value + 1)}
+                />
+              </>
             )}
           <h2>Diário confirmado</h2>
           <button
@@ -198,6 +212,203 @@ export function AccountingWorkspace({
         </>
       )}
     </main>
+  )
+}
+
+function MovementForm({
+  organizationId,
+  accounts,
+  onSaved,
+}: {
+  organizationId: string
+  accounts: Account[]
+  onSaved: () => void
+}) {
+  const [type, setType] = useState<'income' | 'expense' | 'transfer'>('expense')
+  const [date, setDate] = useState(() => portugalDate(new Date()))
+  const [description, setDescription] = useState('')
+  const [amount, setAmount] = useState('')
+  const [financialAccountId, setFinancialAccountId] = useState('')
+  const [counterAccountId, setCounterAccountId] = useState('')
+  const [pending, setPending] = useState(false)
+  const [error, setError] = useState('')
+  const operation = useRef(crypto.randomUUID())
+  const busy = useRef(false)
+  const financialAccounts = accounts.filter(
+    (account) =>
+      account.active && ['cash', 'bank'].includes(account.kind ?? ''),
+  )
+  const counterAccounts = accounts.filter(
+    (account) =>
+      account.active &&
+      (type === 'transfer'
+        ? ['cash', 'bank'].includes(account.kind ?? '') &&
+          account.id !== financialAccountId
+        : account.kind === type),
+  )
+  function edited() {
+    operation.current = crypto.randomUUID()
+  }
+  async function submit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    if (busy.current) return
+    const parts = amount.trim().match(/^(\d{1,14})(?:[,.](\d{1,2}))?$/)
+    const cents = parts
+      ? BigInt(parts[1]) * BigInt(100) + BigInt((parts[2] ?? '').padEnd(2, '0'))
+      : BigInt(0)
+    if (
+      cents <= 0 ||
+      cents > BigInt(Number.MAX_SAFE_INTEGER) ||
+      !description.trim() ||
+      !financialAccountId ||
+      !counterAccountId ||
+      financialAccountId === counterAccountId
+    ) {
+      setError('Confirma a descrição, as contas e um valor válido em EUR.')
+      return
+    }
+    busy.current = true
+    setPending(true)
+    setError('')
+    try {
+      const response = await fetch(
+        `/api/organizations/${organizationId}/movements`,
+        {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({
+            type,
+            date,
+            description,
+            amountCents: Number(cents),
+            financialAccountId,
+            counterAccountId,
+            idempotencyKey: operation.current,
+          }),
+        },
+      )
+      if (!response.ok) {
+        const failure = await response.json()
+        throw new Error(
+          typeof failure.error === 'string'
+            ? failure.error
+            : 'Não foi possível guardar. Tenta novamente.',
+        )
+      }
+      setDescription('')
+      setAmount('')
+      edited()
+      onSaved()
+    } catch (cause) {
+      setError(
+        cause instanceof Error
+          ? cause.message
+          : 'Não foi possível guardar. Tenta novamente.',
+      )
+    } finally {
+      busy.current = false
+      setPending(false)
+    }
+  }
+  return (
+    <form onSubmit={submit}>
+      <h2>Novo movimento</h2>
+      {error && <p role="alert">{error}</p>}
+      <fieldset disabled={pending}>
+        <label>
+          Tipo de movimento{' '}
+          <select
+            value={type}
+            onChange={(event) => {
+              setType(event.target.value as typeof type)
+              setCounterAccountId('')
+              edited()
+            }}
+          >
+            <option value="expense">Despesa</option>
+            <option value="income">Receita</option>
+            <option value="transfer">Transferência</option>
+          </select>
+        </label>
+        <label>
+          Data do movimento{' '}
+          <input
+            type="date"
+            required
+            value={date}
+            onChange={(event) => {
+              setDate(event.target.value)
+              edited()
+            }}
+          />
+        </label>
+        <label>
+          Descrição do movimento{' '}
+          <input
+            required
+            maxLength={500}
+            value={description}
+            onChange={(event) => {
+              setDescription(event.target.value)
+              edited()
+            }}
+          />
+        </label>
+        <label>
+          Valor do movimento em EUR{' '}
+          <input
+            required
+            inputMode="decimal"
+            placeholder="180,00"
+            value={amount}
+            onChange={(event) => {
+              setAmount(event.target.value)
+              edited()
+            }}
+          />
+        </label>
+        <label>
+          Conta de origem ou destino{' '}
+          <select
+            required
+            value={financialAccountId}
+            onChange={(event) => {
+              setFinancialAccountId(event.target.value)
+              setCounterAccountId('')
+              edited()
+            }}
+          >
+            <option value="">Selecionar conta</option>
+            {financialAccounts.map((account) => (
+              <option key={account.id} value={account.id}>
+                {account.code} · {account.name}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label>
+          Categoria ou conta de transferência{' '}
+          <select
+            required
+            value={counterAccountId}
+            onChange={(event) => {
+              setCounterAccountId(event.target.value)
+              edited()
+            }}
+          >
+            <option value="">Selecionar conta</option>
+            {counterAccounts.map((account) => (
+              <option key={account.id} value={account.id}>
+                {account.code} · {account.name}
+              </option>
+            ))}
+          </select>
+        </label>
+        <button type="submit" disabled={pending}>
+          {pending ? 'A guardar…' : 'Guardar movimento'}
+        </button>
+      </fieldset>
+    </form>
   )
 }
 
