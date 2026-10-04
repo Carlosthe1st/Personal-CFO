@@ -6,6 +6,7 @@ import type { MemberRole } from '../db/schema'
 import type { JournalEntryView } from '../server/journal'
 import { formatEuro } from '../lib/finance'
 import { portugalDate } from '../lib/date'
+import { BudgetPanel } from './budget-panel'
 
 type Organization = { id: string; name: string; role: MemberRole }
 type Account = {
@@ -209,6 +210,15 @@ export function AccountingWorkspace({
               </ul>
             </section>
           ))}
+          <BudgetPanel
+            key={`budget-${organizationId}`}
+            organizationId={organizationId}
+            role={
+              ownOrganizations.find((org) => org.id === organizationId)?.role ??
+              'reader'
+            }
+            accounts={accounts}
+          />
         </>
       )}
     </main>
