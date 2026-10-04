@@ -2,11 +2,13 @@
 
 import { useEffect, useState, useRef, type FormEvent } from 'react'
 import Link from 'next/link'
-import type { MemberRole } from '../db/schema'
+import type { MemberRole, AccountKind } from '../db/schema'
 import type { JournalEntryView } from '../server/journal'
 import { formatEuro } from '../lib/finance'
 import { portugalDate } from '../lib/date'
 import { BudgetPanel } from './budget-panel'
+import { AccountManager } from './account-manager'
+import { ReportPanel } from './report-panel'
 
 type Organization = { id: string; name: string; role: MemberRole }
 type Account = {
@@ -14,7 +16,8 @@ type Account = {
   code: string
   name: string
   active: boolean
-  kind?: 'cash' | 'bank' | 'income' | 'expense' | 'other'
+  kind?: AccountKind
+  version?: number
 }
 
 async function read<T>(url: string, signal: AbortSignal): Promise<T> {
@@ -168,6 +171,16 @@ export function AccountingWorkspace({
         <p role="status">A consultar o diário…</p>
       ) : (
         <>
+          {['owner', 'admin'].includes(
+            ownOrganizations.find((org) => org.id === organizationId)?.role ??
+              '',
+          ) && (
+            <AccountManager
+              organizationId={organizationId}
+              accounts={accounts}
+              onSaved={() => setRevision((value) => value + 1)}
+            />
+          )}
           {ownOrganizations.find((org) => org.id === organizationId)?.role !==
             'reader' &&
             organizationId && (
@@ -217,6 +230,11 @@ export function AccountingWorkspace({
               ownOrganizations.find((org) => org.id === organizationId)?.role ??
               'reader'
             }
+            accounts={accounts}
+          />
+          <ReportPanel
+            key={`reports-${organizationId}`}
+            organizationId={organizationId}
             accounts={accounts}
           />
         </>
