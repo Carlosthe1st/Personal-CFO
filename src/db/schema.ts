@@ -283,3 +283,83 @@ export const loginRateLimits = pgTable(
   },
   (t) => [index('login_limits_window').on(t.windowStart)],
 )
+
+export const budgets = pgTable(
+  'budgets',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    organizationId: uuid('organization_id')
+      .notNull()
+      .references(() => organizations.id),
+    year: integer('year').notNull(),
+    annualCents: bigint('annual_cents', { mode: 'number' })
+      .notNull()
+      .default(0),
+    version: integer('version').notNull().default(0),
+  },
+  (t) => [
+    unique('budget_org_year').on(t.organizationId, t.year),
+    unique('budget_org_id').on(t.organizationId, t.id),
+    check('budget_year', sql`${t.year} between 1900 and 9998`),
+    check(
+      'budget_annual_cents',
+      sql`${t.annualCents} between 0 and 9007199254740991`,
+    ),
+    check('budget_version', sql`${t.version} >= 0`),
+  ],
+)
+export const budgetCells = pgTable(
+  'budget_cells',
+  {
+    organizationId: uuid('organization_id').notNull(),
+    budgetId: uuid('budget_id').notNull(),
+    month: integer('month').notNull(),
+    accountId: uuid('account_id').notNull(),
+    plannedCents: bigint('planned_cents', { mode: 'number' }).notNull(),
+  },
+  (t) => [
+    primaryKey({ columns: [t.budgetId, t.month, t.accountId] }),
+    foreignKey({
+      columns: [t.organizationId, t.budgetId],
+      foreignColumns: [budgets.organizationId, budgets.id],
+    }),
+    foreignKey({
+      columns: [t.organizationId, t.accountId],
+      foreignColumns: [accounts.organizationId, accounts.id],
+    }),
+    check('budget_month', sql`${t.month} between 1 and 12`),
+    check(
+      'budget_cell_cents',
+      sql`${t.plannedCents} between 0 and 9007199254740991`,
+    ),
+  ],
+)
+export const budgetEvents = pgTable(
+  'budget_events',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    organizationId: uuid('organization_id').notNull(),
+    budgetId: uuid('budget_id').notNull(),
+    actorId: uuid('actor_id')
+      .notNull()
+      .references(() => users.id),
+    action: text('action').$type<'revise' | 'transfer'>().notNull(),
+    version: integer('version').notNull(),
+    idempotencyKey: text('idempotency_key').notNull(),
+    requestHash: text('request_hash').notNull(),
+    reason: text('reason'),
+    data: jsonb('data').notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [
+    foreignKey({
+      columns: [t.organizationId, t.budgetId],
+      foreignColumns: [budgets.organizationId, budgets.id],
+    }),
+    unique('budget_event_operation').on(t.budgetId, t.idempotencyKey),
+    unique('budget_event_version').on(t.budgetId, t.version),
+    check('budget_event_action', sql`${t.action} in ('revise','transfer')`),
+  ],
+)

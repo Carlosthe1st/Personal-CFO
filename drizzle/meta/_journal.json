@@ -64,6 +64,20 @@
       "when": 1791065690580,
       "tag": "0008_classify_starter_accounts",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1791096972172,
+      "tag": "0009_square_blacklash",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1791109088271,
+      "tag": "0010_budget_security",
+      "breakpoints": true
     }
   ]
 }
