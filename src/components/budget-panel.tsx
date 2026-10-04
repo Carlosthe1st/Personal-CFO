@@ -13,6 +13,7 @@ type Cell = {
 }
 type Budget = {
   year: number
+  fiscalYearStartMonth: number
   version: number
   annualCents: number
   plannedCents: string
@@ -91,6 +92,10 @@ export function BudgetPanel({
   })
   const categories = accounts.filter(
     (account) => account.active && account.kind === 'expense',
+  )
+  const fiscalMonths = months.map(
+    (_, index) =>
+      months[((budget?.fiscalYearStartMonth ?? 1) + index - 1) % 12],
   )
   const canEdit = role === 'owner' || role === 'admin'
 
@@ -247,7 +252,7 @@ export function BudgetPanel({
                 <tbody>
                   {budget.cells.map((cell) => (
                     <tr key={`${cell.month}:${cell.accountId}`}>
-                      <td>{months[cell.month - 1]}</td>
+                      <td>{fiscalMonths[cell.month - 1]}</td>
                       <td>
                         {categories.find((item) => item.id === cell.accountId)
                           ?.name ?? 'Categoria'}
@@ -296,7 +301,7 @@ export function BudgetPanel({
                           operations.current.cell = crypto.randomUUID()
                         }}
                       >
-                        {months.map((name, index) => (
+                        {fiscalMonths.map((name, index) => (
                           <option key={name} value={index + 1}>
                             {name}
                           </option>
@@ -347,7 +352,7 @@ export function BudgetPanel({
                           operations.current.transfer = crypto.randomUUID()
                         }}
                       >
-                        {months.map((name, index) => (
+                        {fiscalMonths.map((name, index) => (
                           <option key={name} value={index + 1}>
                             {name}
                           </option>
@@ -381,7 +386,7 @@ export function BudgetPanel({
                           operations.current.transfer = crypto.randomUUID()
                         }}
                       >
-                        {months.map((name, index) => (
+                        {fiscalMonths.map((name, index) => (
                           <option key={name} value={index + 1}>
                             {name}
                           </option>

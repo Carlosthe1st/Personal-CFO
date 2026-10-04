@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { afterEach, expect, it, vi } from 'vitest'
-import { render, screen, cleanup } from '@testing-library/react'
+import { render, screen, cleanup, within } from '@testing-library/react'
 import '@testing-library/jest-dom/vitest'
 import userEvent from '@testing-library/user-event'
 import { BudgetPanel } from '../src/components/budget-panel'
@@ -23,6 +23,7 @@ it('revises annual funds and transfers a monthly category with history', async (
     }
     return Response.json({
       year: 2026,
+      fiscalYearStartMonth: 1,
       version,
       annualCents: version ? 7000000 : 0,
       plannedCents: version ? '100000' : '0',
@@ -100,4 +101,48 @@ it('revises annual funds and transfers a monthly category with history', async (
     to: { month: 2, accountId: 'expense' },
     amountCents: 10000,
   })
+})
+
+it('labels fiscal month one as April for an April-start exercise', async () => {
+  const user = userEvent.setup()
+  vi.stubGlobal('fetch', async () =>
+    Response.json({
+      year: 2026,
+      fiscalYearStartMonth: 4,
+      version: 1,
+      annualCents: 10000,
+      plannedCents: '10000',
+      undistributedCents: '0',
+      realizedCents: '0',
+      availableCents: '10000',
+      warnings: [],
+      cells: [
+        {
+          month: 1,
+          accountId: 'expense',
+          plannedCents: 10000,
+          realizedCents: '0',
+          availableCents: '10000',
+        },
+      ],
+      history: [],
+    }),
+  )
+  render(
+    <BudgetPanel
+      organizationId="org-a"
+      role="owner"
+      accounts={[
+        { id: 'expense', name: 'Despesas', kind: 'expense', active: true },
+      ]}
+    />,
+  )
+  await user.click(screen.getByRole('button', { name: 'Abrir orçamento' }))
+  expect(await screen.findByRole('cell', { name: 'Abril' })).toBeInTheDocument()
+  expect(screen.getByLabelText('Mês a planear')).toHaveValue('1')
+  expect(
+    within(screen.getByLabelText('Mês a planear')).getByRole('option', {
+      name: 'Abril',
+    }),
+  ).toHaveValue('1')
 })
