@@ -18,6 +18,20 @@ CREATE TABLE "movements" (
 	CONSTRAINT "movement_distinct_accounts" CHECK ("movements"."financial_account_id" <> "movements"."counter_account_id")
 );
 --> statement-breakpoint
+ALTER TABLE public.movements ENABLE ROW LEVEL SECURITY;
+--> statement-breakpoint
+REVOKE ALL ON TABLE public.movements FROM PUBLIC;
+--> statement-breakpoint
+DO $$
+DECLARE role_name text;
+BEGIN
+  FOREACH role_name IN ARRAY ARRAY['anon', 'authenticated', 'service_role'] LOOP
+    IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = role_name) THEN
+      EXECUTE format('REVOKE ALL ON TABLE public.movements FROM %I', role_name);
+    END IF;
+  END LOOP;
+END $$;
+--> statement-breakpoint
 ALTER TABLE "movements" ADD CONSTRAINT "movements_organization_id_organizations_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organizations"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "movements" ADD CONSTRAINT "movements_actor_id_users_id_fk" FOREIGN KEY ("actor_id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "movements" ADD CONSTRAINT "movements_organization_id_journal_entry_id_journal_entries_organization_id_id_fk" FOREIGN KEY ("organization_id","journal_entry_id") REFERENCES "public"."journal_entries"("organization_id","id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint

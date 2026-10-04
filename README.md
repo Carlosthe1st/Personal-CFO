@@ -1,6 +1,6 @@
 # Personal CFO
 
-Um CFO de bolso para pequenas empresas e organizações em Portugal. Este primeiro protótipo transforma texto simples em propostas de lançamentos, mostra uma visão financeira e guarda os registos no navegador.
+Um CFO de bolso para pequenas empresas e organizações em Portugal. A demonstração em `/` guarda dados fictícios no navegador; a área `/contabilidade` usa autenticação e PostgreSQL. A contabilidade completa ainda está em desenvolvimento.
 
 ## Começar
 
@@ -15,9 +15,9 @@ Abre [http://localhost:3000](http://localhost:3000). Os dados de demonstração 
 
 ## Preparar uma demonstração em produção
 
-Não são necessárias variáveis de ambiente, base de dados nem chave de IA para este MVP. A interpretação é local. `.env.example` documenta apenas integrações futuras, ainda não implementadas.
+Não são necessárias variáveis de ambiente para a demonstração em `/`. A área contabilística requer as variáveis de servidor descritas abaixo.
 
-Num serviço que suporte Node.js 22, usa `npm ci` para instalar, `npm run build` para compilar e `npm start` para iniciar. O servidor utiliza `PORT` quando definido pelo serviço; o valor local por omissão é 3000. Publica com HTTPS para disponibilizar as APIs do navegador usadas pela demonstração. A escolha da plataforma continua em aberto.
+Num serviço que suporte Node.js 22, usa `npm ci` para instalar, `npm run build` para compilar e `npm start` para iniciar. O servidor utiliza `PORT` quando definido pelo serviço; o valor local por omissão é 3000. Publica com HTTPS para disponibilizar as APIs do navegador usadas pela demonstração. A versão pública atual está na Vercel.
 
 Para verificar a versão de produção localmente:
 
@@ -67,9 +67,9 @@ npm run format:check
 
 Configura `DATABASE_URL` apenas no servidor. Gera alterações com `npm run db:generate` e aplica migrações explicitamente com `npm run db:migrate`; o build nunca migra a base. Faz backup e testa a reposição antes de aplicar migrações fora de desenvolvimento. Não há rollback destrutivo automático.
 
-O projeto Supabase de desenvolvimento `Personal CFO` (`josqvkfgcbogggefimfd`, `eu-west-1`) é separado do Ebenezer Finance. As quatro migrações em `drizzle/` foram aplicadas e registadas no histórico Drizzle. As dez tabelas têm RLS ativa e não concedem acesso a `anon` nem `authenticated`; a app usa PostgreSQL diretamente, não a Data API nem chaves públicas. A ligação Vercel–Supabase e o email estão configurados como segredos de produção; não colocar credenciais no repositório.
+O projeto Supabase de desenvolvimento `Personal CFO` (`josqvkfgcbogggefimfd`, `eu-west-1`) é separado do Ebenezer Finance. Aplica as migrações pendentes com `npm run db:migrate` antes de publicar código que dependa delas; não edites o histórico Drizzle manualmente. As tabelas têm RLS ativa e não concedem acesso a `anon` nem `authenticated`; a app usa PostgreSQL diretamente, não a Data API nem chaves públicas. A ligação Vercel–Supabase e o email estão configurados como segredos de produção; não colocar credenciais no repositório.
 
-Para o deploy na Vercel, configura como segredos de servidor `DATABASE_URL` (Transaction pooler Supabase, porta 6543, com `sslmode=verify-full`), `AUTH_SECRET` (aleatório, 32+ caracteres), `AUTH_URL` (URL HTTPS pública), `AUTH_TRUST_HOST=true`, `EMAIL_SERVER` (SMTP com TLS) e `EMAIL_FROM` (domínio verificado). Não uses `NEXT_PUBLIC_` nestas variáveis. O cliente usa `node-postgres` sem pipelining e exige TLS verificado fora do localhost. O certificado público da CA do pooler Supabase está em `src/db/supabase-ca.ts` e deve ser atualizado se o fornecedor o rodar. O build não aplica migrações. Antes de ativar dados reais: limitar abuso de login, configurar backups externos e testar restauro; o plano Free não fornece backup automático.
+Para o deploy na Vercel, configura como segredos de servidor `DATABASE_URL` (Transaction pooler Supabase, porta 6543, com `sslmode=verify-full`), `AUTH_SECRET` (aleatório, 32+ caracteres), `AUTH_URL` (URL HTTPS pública), `AUTH_TRUST_HOST=true`, `EMAIL_SERVER` (SMTP com TLS) e `EMAIL_FROM` (domínio verificado). Não uses `NEXT_PUBLIC_` nestas variáveis. O cliente usa `node-postgres` sem pipelining e exige TLS verificado fora do localhost. O certificado público da CA do pooler Supabase está em `src/db/supabase-ca.ts` e deve ser atualizado se o fornecedor o rodar. O build não aplica migrações. O login limita pedidos por email e IP, com contadores persistentes. Antes de ativar dados reais: configurar backups externos, testar restauro e rever privilégios da ligação à base; o plano Free não fornece backup automático.
 
 Testes PostgreSQL exigem `DATABASE_URL_TEST` numa base descartável local cujo nome termine em `_test`. O helper usa exclusivamente essa variável, aplica migrações e limpa tabelas entre testes. Sem a variável, a integração é assinalada como ignorada, não verificada. Nunca forneças credenciais de produção ao processo de testes.
 
@@ -81,7 +81,7 @@ Nodemailer está fixado em 10.0.13, corrigindo as advisories conhecidas ([releas
 
 Verificação local: testes PostgreSQL abrangem isolamento, autorização, valores inválidos, atomicidade, repetição concorrente e imutabilidade; UI cobre leitor, criação, repetição após 503 e membros. O build funciona sem configuração: `/` responde 200, contabilidade informa indisponibilidade e API responde 503. Com configuração, anónimo recebe redirect 307 e API 401. Para repetir os smoke HTTP/SMTP, inicia `npm start` em loopback com base descartável e `EMAIL_SERVER=smtp://127.0.0.1:25252`, depois executa `ACCOUNTING_TEST_BASE_URL=http://127.0.0.1:PORT npm test -- tests/accounting-http.test.ts tests/auth-smoke.test.ts`; o teste SMTP abre um catcher local e usa email fictício, não fornecedor externo.
 
-A demonstração e a fundação contabilística estão publicadas na Vercel, com domínio, SMTP e PostgreSQL ligados. O uso com dados reais continua bloqueado até haver limites anti-abuso de login, backups externos, restauro testado e revisão de segurança.
+A demonstração e a fundação contabilística estão publicadas na Vercel, em [personalcfo.online](https://personalcfo.online), com domínio, SMTP e PostgreSQL ligados. O limite anti-abuso de login está ativo. O uso com dados reais continua bloqueado até haver backups externos, restauro testado, revisão de segurança e conclusão dos fluxos contabilísticos.
 
 ```bash
 DATABASE_URL_TEST=postgres://user:password@127.0.0.1:5432/personal_cfo_test npm test

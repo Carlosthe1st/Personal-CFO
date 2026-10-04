@@ -11,10 +11,21 @@ describe.skipIf(!process.env.DATABASE_URL_TEST)(
         select c.relname, c.relrowsecurity
         from pg_class c join pg_namespace n on n.oid = c.relnamespace
         where n.nspname = 'public' and c.relkind = 'r'
-          and c.relname in ('users', 'auth_accounts', 'sessions', 'verification_tokens', 'organizations', 'memberships', 'accounts', 'journal_entries', 'journal_lines', 'audit_events')
+          and c.relname in ('users', 'auth_accounts', 'sessions', 'verification_tokens', 'organizations', 'memberships', 'accounts', 'journal_entries', 'journal_lines', 'audit_events', 'login_rate_limits', 'movements')
       `
-      expect(rows).toHaveLength(10)
+      expect(rows).toHaveLength(12)
       expect(rows.every((row) => row.relrowsecurity)).toBe(true)
+    })
+    it('does not grant Data API roles access to movements', async () => {
+      const rows = await testSql`
+        select a.privilege_type
+        from pg_class c
+        cross join lateral aclexplode(coalesce(c.relacl, acldefault('r', c.relowner))) a
+        left join pg_roles r on r.oid = a.grantee
+        where c.oid = 'public.movements'::regclass
+          and (a.grantee = 0 or r.rolname in ('anon', 'authenticated', 'service_role'))
+      `
+      expect(rows).toHaveLength(0)
     })
     it('pins the search path of journal trigger functions', async () => {
       const rows = await testSql`
