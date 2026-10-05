@@ -37,7 +37,10 @@ export async function POST(request: NextRequest, context: Context) {
         typeof candidate.description !== 'string' ||
         typeof candidate.amountCents !== 'number' ||
         typeof candidate.financialAccountId !== 'string' ||
-        typeof candidate.counterAccountId !== 'string'
+        typeof candidate.counterAccountId !== 'string' ||
+        (candidate.fundId !== undefined &&
+          candidate.fundId !== null &&
+          typeof candidate.fundId !== 'string')
       )
         throw new InvalidInputError()
       replacement = {
@@ -48,6 +51,7 @@ export async function POST(request: NextRequest, context: Context) {
         amountCents: candidate.amountCents,
         financialAccountId: candidate.financialAccountId,
         counterAccountId: candidate.counterAccountId,
+        fundId: (candidate.fundId as string | null | undefined) ?? null,
       }
     }
     return json(

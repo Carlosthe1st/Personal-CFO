@@ -14,6 +14,7 @@ import {
   foreignKey,
   check,
   index,
+  uniqueIndex,
 } from 'drizzle-orm/pg-core'
 import type { AdapterAccount } from '@auth/core/adapters'
 
@@ -234,6 +235,26 @@ export const movementChanges = pgTable(
 )
 
 export type MovementType = 'income' | 'expense' | 'transfer'
+export const funds = pgTable(
+  'funds',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    organizationId: uuid('organization_id')
+      .notNull()
+      .references(() => organizations.id),
+    name: text('name').notNull(),
+    active: boolean('active').notNull().default(true),
+    version: integer('version').notNull().default(1),
+  },
+  (t) => [
+    unique('fund_org_id').on(t.organizationId, t.id),
+    uniqueIndex('fund_org_name').on(
+      t.organizationId,
+      sql`lower(trim(${t.name}))`,
+    ),
+    check('fund_name', sql`length(trim(${t.name})) between 1 and 100`),
+  ],
+)
 export const movements = pgTable(
   'movements',
   {
@@ -251,6 +272,7 @@ export const movements = pgTable(
     amountCents: bigint('amount_cents', { mode: 'number' }).notNull(),
     financialAccountId: uuid('financial_account_id').notNull(),
     counterAccountId: uuid('counter_account_id').notNull(),
+    fundId: uuid('fund_id'),
     idempotencyKey: text('idempotency_key').notNull(),
     createdAt: timestamp('created_at', { withTimezone: true })
       .notNull()
@@ -271,6 +293,10 @@ export const movements = pgTable(
     foreignKey({
       columns: [t.organizationId, t.counterAccountId],
       foreignColumns: [accounts.organizationId, accounts.id],
+    }),
+    foreignKey({
+      columns: [t.organizationId, t.fundId],
+      foreignColumns: [funds.organizationId, funds.id],
     }),
     check('movement_type', sql`${t.type} in ('income','expense','transfer')`),
     check(

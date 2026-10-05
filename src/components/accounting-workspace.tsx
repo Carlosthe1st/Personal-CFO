@@ -28,6 +28,7 @@ import { AccountingChat } from './accounting-chat'
 import { emailSignOut } from '../app/login/actions'
 
 type Organization = { id: string; name: string; role: MemberRole }
+type Fund = { id: string; name: string; active: boolean; version: number }
 type View =
   | 'overview'
   | 'movements'
@@ -65,6 +66,7 @@ export function AccountingWorkspace({
     organizations[0]?.id ?? '',
   )
   const [accounts, setAccounts] = useState<Account[]>([])
+  const [funds, setFunds] = useState<Fund[]>([])
   const [journal, setJournal] = useState<JournalEntryView[]>([])
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(true)
@@ -206,11 +208,16 @@ export function AccountingWorkspace({
           `/api/organizations/${organizationId}/journal`,
           controller.signal,
         ),
+        read<Fund[]>(
+          `/api/organizations/${organizationId}/funds`,
+          controller.signal,
+        ),
       ])
-        .then(([nextAccounts, nextJournal]) => {
+        .then(([nextAccounts, nextJournal, nextFunds]) => {
           if (!controller.signal.aborted) {
             setAccounts(nextAccounts)
             setJournal(nextJournal)
+            setFunds(nextFunds)
             setLoadedOrganizationId(organizationId)
             setError('')
             setDataError(false)
@@ -221,6 +228,7 @@ export function AccountingWorkspace({
           if (!controller.signal.aborted) {
             setAccounts([])
             setJournal([])
+            setFunds([])
             setLoadedOrganizationId(organizationId)
             setDataError(true)
             setError(
@@ -518,6 +526,7 @@ export function AccountingWorkspace({
                       key={`movement-${organizationId}`}
                       organizationId={organizationId}
                       accounts={accounts}
+                      funds={funds}
                       onSaved={() => setRevision((value) => value + 1)}
                       canManage={canManage}
                     />
@@ -526,6 +535,7 @@ export function AccountingWorkspace({
                     key={`history-${organizationId}`}
                     organizationId={organizationId}
                     accounts={accounts}
+                    funds={funds}
                     canEdit={canWrite}
                     canManageReceipts={canManage}
                     receiptStorageConfigured={receiptStorageConfigured}
@@ -641,6 +651,11 @@ export function AccountingWorkspace({
                     accounts={accounts}
                     onSaved={() => setRevision((value) => value + 1)}
                   />
+                  <FundManager
+                    organizationId={organizationId}
+                    funds={funds}
+                    onSaved={() => setRevision((value) => value + 1)}
+                  />
                   <MemberForm
                     key={`members-${organizationId}`}
                     organizationId={organizationId}
@@ -659,11 +674,13 @@ export function AccountingWorkspace({
 function MovementForm({
   organizationId,
   accounts,
+  funds,
   onSaved,
   canManage,
 }: {
   organizationId: string
   accounts: Account[]
+  funds: Fund[]
   onSaved: () => void
   canManage: boolean
 }) {
@@ -673,6 +690,7 @@ function MovementForm({
   const [amount, setAmount] = useState('')
   const [financialAccountId, setFinancialAccountId] = useState('')
   const [counterAccountId, setCounterAccountId] = useState('')
+  const [fundId, setFundId] = useState('')
   const [pending, setPending] = useState(false)
   const [error, setError] = useState('')
   const operation = useRef(crypto.randomUUID())
@@ -726,6 +744,7 @@ function MovementForm({
             amountCents: Number(cents),
             financialAccountId,
             counterAccountId,
+            fundId: type === 'transfer' ? null : fundId || null,
             idempotencyKey: operation.current,
           }),
         },
@@ -765,6 +784,7 @@ function MovementForm({
             onChange={(event) => {
               setType(event.target.value as typeof type)
               setCounterAccountId('')
+              if (event.target.value === 'transfer') setFundId('')
               edited()
             }}
           >
@@ -847,6 +867,27 @@ function MovementForm({
             ))}
           </select>
         </label>
+        {type !== 'transfer' && (
+          <label>
+            Fundo do movimento{' '}
+            <select
+              value={fundId}
+              onChange={(event) => {
+                setFundId(event.target.value)
+                edited()
+              }}
+            >
+              <option value="">Sem fundo</option>
+              {funds
+                .filter((fund) => fund.active)
+                .map((fund) => (
+                  <option key={fund.id} value={fund.id}>
+                    {fund.name}
+                  </option>
+                ))}
+            </select>
+          </label>
+        )}
         {canManage && type !== 'transfer' && (
           <CategoryCreator
             organizationId={organizationId}
@@ -862,6 +903,129 @@ function MovementForm({
         </button>
       </fieldset>
     </form>
+  )
+}
+
+function FundManager({
+  organizationId,
+  funds,
+  onSaved,
+}: {
+  organizationId: string
+  funds: Fund[]
+  onSaved: () => void
+}) {
+  const [name, setName] = useState('')
+  const [editingId, setEditingId] = useState('')
+  const [editName, setEditName] = useState('')
+  const [error, setError] = useState('')
+  const [pending, setPending] = useState(false)
+  async function createFund(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    if (pending) return
+    setPending(true)
+    setError('')
+    try {
+      const response = await fetch(
+        `/api/organizations/${organizationId}/funds`,
+        {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ name }),
+        },
+      )
+      if (!response.ok) throw new Error('Não foi possível criar o fundo.')
+      setName('')
+      onSaved()
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Erro de ligação.')
+    } finally {
+      setPending(false)
+    }
+  }
+  async function update(fund: Fund, nextName: string, active: boolean) {
+    setPending(true)
+    setError('')
+    try {
+      const response = await fetch(
+        `/api/organizations/${organizationId}/funds/${fund.id}`,
+        {
+          method: 'PATCH',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ name: nextName, active }),
+        },
+      )
+      if (!response.ok) throw new Error('Não foi possível atualizar o fundo.')
+      setEditingId('')
+      onSaved()
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Erro de ligação.')
+    } finally {
+      setPending(false)
+    }
+  }
+  return (
+    <section>
+      <h2>Fundos e projetos</h2>
+      <form onSubmit={createFund}>
+        <label>
+          Nome do fundo{' '}
+          <input
+            value={name}
+            required
+            maxLength={100}
+            onChange={(event) => setName(event.target.value)}
+          />
+        </label>
+        <button type="submit" disabled={pending}>
+          Criar fundo
+        </button>
+      </form>
+      <ul>
+        {funds.map((fund) => (
+          <li key={fund.id}>
+            {fund.name} · {fund.active ? 'Ativo' : 'Arquivado'}{' '}
+            {editingId === fund.id ? (
+              <>
+                <label>
+                  Novo nome do fundo{' '}
+                  <input
+                    value={editName}
+                    maxLength={100}
+                    onChange={(event) => setEditName(event.target.value)}
+                  />
+                </label>
+                <button
+                  type="button"
+                  disabled={pending || !editName.trim()}
+                  onClick={() => update(fund, editName, fund.active)}
+                >
+                  Guardar nome
+                </button>
+              </>
+            ) : (
+              <button
+                type="button"
+                onClick={() => {
+                  setEditingId(fund.id)
+                  setEditName(fund.name)
+                }}
+              >
+                Renomear {fund.name}
+              </button>
+            )}{' '}
+            <button
+              type="button"
+              disabled={pending}
+              onClick={() => update(fund, fund.name, !fund.active)}
+            >
+              {fund.active ? 'Arquivar' : 'Reativar'} {fund.name}
+            </button>
+          </li>
+        ))}
+      </ul>
+      {error && <p role="alert">{error}</p>}
+    </section>
   )
 }
 

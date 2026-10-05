@@ -45,25 +45,45 @@ describe('accounting workspace', () => {
     ).toBeVisible()
   })
   it('shows real financial totals and categories in the overview', async () => {
-    vi.stubGlobal('fetch', async (url: string) => Response.json(
-      url.endsWith('/accounts')
-        ? [
-            { id: 'cash', code: 'CAIXA', name: 'Caixa', kind: 'cash', active: true },
-            { id: 'expense', code: 'DESPESA', name: 'Despesas', kind: 'expense', active: true },
-          ]
-        : [entry],
-    ))
+    vi.stubGlobal('fetch', async (url: string) =>
+      Response.json(
+        url.endsWith('/accounts')
+          ? [
+              {
+                id: 'cash',
+                code: 'CAIXA',
+                name: 'Caixa',
+                kind: 'cash',
+                active: true,
+              },
+              {
+                id: 'expense',
+                code: 'DESPESA',
+                name: 'Despesas',
+                kind: 'expense',
+                active: true,
+              },
+            ]
+          : [entry],
+      ),
+    )
     render(<AccountingWorkspace organizations={organizations} />)
     expect(await screen.findAllByText('Saldo disponível')).toHaveLength(2)
     expect(screen.getByText('Saídas este mês')).toBeInTheDocument()
     expect(screen.getByText('Despesas')).toBeInTheDocument()
   })
   it('never presents failed data loads as an empty financial history', async () => {
-    vi.stubGlobal('fetch', async () => Response.json({ error: 'offline' }, { status: 503 }))
+    vi.stubGlobal('fetch', async () =>
+      Response.json({ error: 'offline' }, { status: 503 }),
+    )
     render(<AccountingWorkspace organizations={organizations} />)
     expect(await screen.findByRole('alert')).toBeInTheDocument()
-    expect(screen.queryByText('Ainda não existem lançamentos confirmados.')).not.toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Tentar novamente' })).toBeInTheDocument()
+    expect(
+      screen.queryByText('Ainda não existem lançamentos confirmados.'),
+    ).not.toBeInTheDocument()
+    expect(
+      screen.getByRole('button', { name: 'Tentar novamente' }),
+    ).toBeInTheDocument()
   })
   it('closes the mobile menu with Escape and restores focus', async () => {
     const user = userEvent.setup()
@@ -71,9 +91,13 @@ describe('accounting workspace', () => {
     render(<AccountingWorkspace organizations={organizations} />)
     const toggle = screen.getByRole('button', { name: 'Abrir menu' })
     await user.click(toggle)
-    expect(screen.getByRole('dialog', { name: 'Menu principal' })).toBeInTheDocument()
+    expect(
+      screen.getByRole('dialog', { name: 'Menu principal' }),
+    ).toBeInTheDocument()
     await user.keyboard('{Escape}')
-    expect(screen.queryByRole('dialog', { name: 'Menu principal' })).not.toBeInTheDocument()
+    expect(
+      screen.queryByRole('dialog', { name: 'Menu principal' }),
+    ).not.toBeInTheDocument()
     expect(toggle).toHaveFocus()
   })
   it('records a simple expense through the movements API', async () => {
@@ -137,6 +161,61 @@ describe('accounting workspace', () => {
       counterAccountId: 'expense',
     })
     expect(payload?.idempotencyKey).toEqual(expect.any(String))
+  })
+  it('keeps the selected fund when entering a movement', async () => {
+    const user = userEvent.setup()
+    let payload: Record<string, unknown> | undefined
+    vi.stubGlobal('fetch', async (url: string, init?: RequestInit) => {
+      if (url.endsWith('/movements') && init?.method === 'POST') {
+        payload = JSON.parse(init.body as string)
+        return Response.json({ id: 'movement-a' }, { status: 201 })
+      }
+      if (url.endsWith('/funds'))
+        return Response.json([{ id: 'fund-a', name: 'Missões', active: true }])
+      if (url.endsWith('/accounts'))
+        return Response.json([
+          {
+            id: 'bank',
+            code: 'BANCO',
+            name: 'Banco',
+            kind: 'bank',
+            active: true,
+          },
+          {
+            id: 'expense',
+            code: 'DESPESA',
+            name: 'Despesas',
+            kind: 'expense',
+            active: true,
+          },
+        ])
+      return Response.json([])
+    })
+    render(
+      <AccountingWorkspace
+        organizations={[{ ...organizations[0], role: 'editor' }]}
+      />,
+    )
+    await user.click(screen.getByRole('button', { name: 'Movimentos' }))
+    await user.selectOptions(
+      await screen.findByLabelText('Fundo do movimento'),
+      'fund-a',
+    )
+    await user.type(screen.getByLabelText('Descrição do movimento'), 'Material')
+    await user.type(
+      screen.getByLabelText('Valor do movimento em EUR'),
+      '100,00',
+    )
+    await user.selectOptions(
+      screen.getByLabelText('Conta de origem ou destino'),
+      'bank',
+    )
+    await user.selectOptions(
+      screen.getByLabelText('Categoria ou conta de transferência'),
+      'expense',
+    )
+    await user.click(screen.getByRole('button', { name: 'Guardar movimento' }))
+    expect(payload?.fundId).toBe('fund-a')
   })
   it('lets an owner add a registered member with a selected role', async () => {
     const user = userEvent.setup()
@@ -277,6 +356,8 @@ describe('accounting workspace', () => {
     expect(
       await screen.findByRole('option', { name: 'Novo atelier' }),
     ).toBeInTheDocument()
-    expect(screen.getByRole('navigation', { name: 'Navegação principal' })).toBeInTheDocument()
+    expect(
+      screen.getByRole('navigation', { name: 'Navegação principal' }),
+    ).toBeInTheDocument()
   })
 })

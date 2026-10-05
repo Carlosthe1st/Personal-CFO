@@ -20,7 +20,10 @@ export async function POST(request: NextRequest, context: Context) {
       typeof body.amountCents !== 'number' ||
       typeof body.financialAccountId !== 'string' ||
       typeof body.counterAccountId !== 'string' ||
-      typeof body.idempotencyKey !== 'string'
+      typeof body.idempotencyKey !== 'string' ||
+      (body.fundId !== undefined &&
+        body.fundId !== null &&
+        typeof body.fundId !== 'string')
     )
       throw new InvalidInputError()
     return json(
@@ -34,6 +37,7 @@ export async function POST(request: NextRequest, context: Context) {
         financialAccountId: body.financialAccountId,
         counterAccountId: body.counterAccountId,
         idempotencyKey: body.idempotencyKey,
+        fundId: (body.fundId as string | null | undefined) ?? null,
       }),
       201,
     )

@@ -13,6 +13,7 @@ type Movement = {
   amountCents: number
   financialAccountId: string
   counterAccountId: string
+  fundId?: string | null
   status: 'active' | 'corrected' | 'removed'
   change: { reason: string; replacementMovementId: string | null } | null
 }
@@ -20,6 +21,7 @@ type Movement = {
 export function MovementHistory({
   organizationId,
   accounts,
+  funds = [],
   canEdit,
   canManageReceipts = false,
   receiptStorageConfigured = true,
@@ -28,6 +30,7 @@ export function MovementHistory({
 }: {
   organizationId: string
   accounts: Account[]
+  funds?: { id: string; name: string; active: boolean }[]
   canEdit: boolean
   canManageReceipts?: boolean
   receiptStorageConfigured?: boolean
@@ -44,6 +47,7 @@ export function MovementHistory({
   const [amount, setAmount] = useState('')
   const [financialAccountId, setFinancialAccountId] = useState('')
   const [counterAccountId, setCounterAccountId] = useState('')
+  const [fundId, setFundId] = useState('')
   const [pending, setPending] = useState(false)
   const [error, setError] = useState('')
   const operation = useRef(crypto.randomUUID())
@@ -75,6 +79,7 @@ export function MovementHistory({
     setAmount((row.amountCents / 100).toFixed(2).replace('.', ','))
     setFinancialAccountId(row.financialAccountId)
     setCounterAccountId(row.counterAccountId)
+    setFundId(row.fundId ?? '')
     setError('')
     operation.current = crypto.randomUUID()
   }
@@ -120,6 +125,7 @@ export function MovementHistory({
                     amountCents: Number(cents),
                     financialAccountId,
                     counterAccountId,
+                    fundId: type === 'transfer' ? null : fundId || null,
                   },
                 }
               : {}),
@@ -163,7 +169,9 @@ export function MovementHistory({
               : row.status === 'corrected'
                 ? 'Corrigido'
                 : 'Removido'}
-            {row.change && ` · Motivo: ${row.change.reason}`}{' '}
+            {row.change && ` · Motivo: ${row.change.reason}`}
+            {row.fundId &&
+              ` · Fundo: ${funds.find((fund) => fund.id === row.fundId)?.name ?? 'Arquivado'}`}{' '}
             <ReceiptAttachments
               organizationId={organizationId}
               movement={row}
@@ -210,6 +218,7 @@ export function MovementHistory({
                     onChange={(e) => {
                       setType(e.target.value as MovementType)
                       setCounterAccountId('')
+                      if (e.target.value === 'transfer') setFundId('')
                     }}
                   >
                     <option value="expense">Despesa</option>
@@ -283,6 +292,24 @@ export function MovementHistory({
                     ))}
                   </select>
                 </label>
+                {type !== 'transfer' && (
+                  <label>
+                    Fundo do movimento corrigido{' '}
+                    <select
+                      value={fundId}
+                      onChange={(event) => setFundId(event.target.value)}
+                    >
+                      <option value="">Sem fundo</option>
+                      {funds
+                        .filter((fund) => fund.active || fund.id === fundId)
+                        .map((fund) => (
+                          <option key={fund.id} value={fund.id}>
+                            {fund.name}
+                          </option>
+                        ))}
+                    </select>
+                  </label>
+                )}
               </>
             )}
             <button type="submit">

@@ -8,6 +8,7 @@ import {
   accounts,
   auditEvents,
   memberships,
+  funds,
   type MovementType,
 } from '../db/schema'
 import {
@@ -32,6 +33,7 @@ export type MovementInput = {
   amountCents: number
   financialAccountId: string
   counterAccountId: string
+  fundId?: string | null
   idempotencyKey: string
 }
 export async function createMovement(input: MovementInput) {
@@ -55,6 +57,23 @@ async function createMovementInTransaction(
     !/^[a-zA-Z0-9_-]{1,100}$/.test(input.idempotencyKey)
   )
     throw new InvalidInputError()
+  if (input.fundId && !uuidPattern.test(input.fundId))
+    throw new InvalidInputError()
+  if (input.type === 'transfer' && input.fundId) throw new InvalidInputError()
+  if (input.fundId) {
+    const [fund] = await tx
+      .select({ id: funds.id })
+      .from(funds)
+      .where(
+        and(
+          eq(funds.organizationId, input.organizationId),
+          eq(funds.id, input.fundId),
+          eq(funds.active, true),
+        ),
+      )
+      .for('share')
+    if (!fund) throw new ForbiddenError()
+  }
   const selected = await tx
     .select()
     .from(accounts)
@@ -104,6 +123,7 @@ async function createMovementInTransaction(
     amountCents: input.amountCents,
     financialAccountId: input.financialAccountId,
     counterAccountId: input.counterAccountId,
+    fundId: input.fundId ?? null,
     idempotencyKey: input.idempotencyKey,
     journalEntryId: journal.id,
   }
@@ -196,6 +216,7 @@ export async function changeMovement(input: MovementChangeInput) {
         amountCents: input.replacement.amountCents,
         financialAccountId: input.replacement.financialAccountId,
         counterAccountId: input.replacement.counterAccountId,
+        fundId: input.replacement.fundId ?? null,
       }
     : undefined
   if (replacement)
