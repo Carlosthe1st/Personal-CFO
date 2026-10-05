@@ -5,7 +5,7 @@ export default async function ConfirmPage({
 }) {
   const { c } = await searchParams
   return (
-    <main>
+    <main className="auth-confirm">
       <h1>Confirma o acesso</h1>
       <p>
         Clica no botão para entrar no Personal CFO. Por segurança, cada link só
