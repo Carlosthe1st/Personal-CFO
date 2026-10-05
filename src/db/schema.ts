@@ -97,6 +97,8 @@ export const accounts = pgTable(
     code: text('code').notNull(),
     name: text('name').notNull(),
     kind: text('kind').$type<AccountKind>().notNull().default('other'),
+    bankCountry: text('bank_country').$type<'PT' | 'BR'>(),
+    bankName: text('bank_name'),
     active: boolean('active').notNull().default(true),
     version: integer('version').notNull().default(0),
   },

@@ -20,6 +20,7 @@ import { formatEuro } from '../lib/finance'
 import { portugalDate } from '../lib/date'
 import { BudgetPanel } from './budget-panel'
 import { AccountManager } from './account-manager'
+import { CategoryCreator } from './category-creator'
 import { ReportPanel } from './report-panel'
 import { StatementPanel } from './statement-panel'
 import { MovementHistory } from './movement-history'
@@ -434,6 +435,7 @@ export function AccountingWorkspace({
                       organizationId={organizationId}
                       accounts={accounts}
                       onSaved={() => setRevision((value) => value + 1)}
+                      canManage={canManage}
                     />
                   )}
                   <MovementHistory
@@ -471,6 +473,7 @@ export function AccountingWorkspace({
                     organizationId={organizationId}
                     role={selectedOrganization?.role ?? 'reader'}
                     accounts={accounts}
+                    onAccountsChanged={() => setRevision((value) => value + 1)}
                   />
                 </div>
               )}
@@ -564,10 +567,12 @@ function MovementForm({
   organizationId,
   accounts,
   onSaved,
+  canManage,
 }: {
   organizationId: string
   accounts: Account[]
   onSaved: () => void
+  canManage: boolean
 }) {
   const [type, setType] = useState<'income' | 'expense' | 'transfer'>('expense')
   const [date, setDate] = useState(() => portugalDate(new Date()))
@@ -749,6 +754,14 @@ function MovementForm({
             ))}
           </select>
         </label>
+        {canManage && type !== 'transfer' && <CategoryCreator
+          organizationId={organizationId}
+          kind={type}
+          onCreated={(id) => {
+            setCounterAccountId(id)
+            onSaved()
+          }}
+        />}
         <button type="submit" disabled={pending}>
           {pending ? 'A guardar…' : 'Guardar movimento'}
         </button>

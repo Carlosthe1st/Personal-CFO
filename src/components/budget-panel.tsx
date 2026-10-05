@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { portugalDate } from '../lib/date'
+import { CategoryCreator } from './category-creator'
 
 type Account = { id: string; name: string; kind?: string; active: boolean }
 type Cell = {
@@ -63,10 +64,12 @@ export function BudgetPanel({
   organizationId,
   role,
   accounts,
+  onAccountsChanged,
 }: {
   organizationId: string
   role: 'owner' | 'admin' | 'editor' | 'reader'
   accounts: Account[]
+  onAccountsChanged?: () => void
 }) {
   const [open, setOpen] = useState(false)
   const [year, setYear] = useState(() =>
@@ -291,6 +294,10 @@ export function BudgetPanel({
                       Guardar verba anual
                     </button>
                   </form>
+                  <CategoryCreator organizationId={organizationId} kind="expense" onCreated={(id) => {
+                    setCategory(id)
+                    onAccountsChanged?.()
+                  }} />
                   <form onSubmit={(event) => submit('cell', event)}>
                     <label>
                       Mês a planear{' '}

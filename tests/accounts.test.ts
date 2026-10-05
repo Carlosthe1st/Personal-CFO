@@ -92,4 +92,22 @@ describe.skipIf(!process.env.DATABASE_URL_TEST)('account management', () => {
       createAccount({ ...identity, code: 'NO', name: 'No', kind: 'expense' }),
     ).rejects.toThrow()
   })
+  it('stores PT and BR bank identification while keeping other account types unchanged', async () => {
+    const identity = await setup()
+    const bank = await createAccount({
+      ...identity, code: 'BANK_PT', name: 'Conta corrente', kind: 'bank',
+      bankCountry: 'PT', bankName: 'Caixa Geral de Depósitos',
+    })
+    expect(bank).toMatchObject({ bankCountry: 'PT', bankName: 'Caixa Geral de Depósitos' })
+    const edited = await updateAccount({
+      ...identity, accountId: bank.id, expectedVersion: 0, active: true,
+      code: 'BANK_PT', name: 'Conta corrente', kind: 'bank',
+      bankCountry: 'BR', bankName: 'Banco do Brasil',
+    })
+    expect(edited).toMatchObject({ bankCountry: 'BR', bankName: 'Banco do Brasil' })
+    await expect(createAccount({
+      ...identity, code: 'BAD', name: 'Banco', kind: 'bank',
+      bankCountry: 'US', bankName: 'Other',
+    })).rejects.toThrow()
+  })
 })

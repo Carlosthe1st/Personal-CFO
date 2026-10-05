@@ -32,6 +32,8 @@ export async function POST(
         code: body.code,
         name: body.name,
         kind: body.kind as AccountKind,
+        bankCountry: body.bankCountry as string | null | undefined,
+        bankName: body.bankName as string | null | undefined,
       }),
       201,
     )

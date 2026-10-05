@@ -21,6 +21,8 @@ type AccountInput = {
   code: string
   name: string
   kind: AccountKind
+  bankCountry?: string | null
+  bankName?: string | null
 }
 function validate(input: AccountInput) {
   if (
@@ -41,6 +43,16 @@ function validate(input: AccountInput) {
     ].includes(input.kind)
   )
     throw new InvalidInputError()
+  if (input.kind === 'bank') {
+    if (
+      (input.bankCountry != null && !['PT', 'BR'].includes(input.bankCountry)) ||
+      (input.bankName != null &&
+        (typeof input.bankName !== 'string' || !input.bankName.trim() || input.bankName.trim().length > 120)) ||
+      (input.bankCountry == null) !== (input.bankName == null)
+    ) throw new InvalidInputError()
+  } else if (input.bankCountry != null || input.bankName != null) {
+    throw new InvalidInputError()
+  }
 }
 async function change(
   input: AccountInput & {
@@ -77,6 +89,8 @@ async function change(
         code: input.code,
         name: input.name.trim(),
         kind: input.kind,
+        bankCountry: input.kind === 'bank' ? (input.bankCountry as 'PT' | 'BR' | null | undefined) ?? null : null,
+        bankName: input.kind === 'bank' ? input.bankName?.trim() ?? null : null,
       }
       let before: typeof accounts.$inferSelect | null = null
       let saved: typeof accounts.$inferSelect
