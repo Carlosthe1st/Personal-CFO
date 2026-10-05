@@ -1,0 +1,33 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-05T00:00:00Z",
+  "title": "Design System: Personal CFO",
+  "extensions": {
+    "colorMeta": {
+      "primary-green": { "role": "primary", "displayName": "Deep Brand Green", "canonical": "#184f3d", "tonalRamp": ["#092018", "#103327", "#184f3d", "#297359", "#479574", "#73b596", "#aad5b9", "#e0efe3"] },
+      "page": { "role": "neutral", "displayName": "Pale Green Page", "canonical": "#f7f9f6", "tonalRamp": ["#1c241c", "#343f34", "#536153", "#758475", "#98a798", "#bbc9bb", "#dce7dc", "#f7f9f6"] }
+    },
+    "shadows": [
+      { "name": "card", "value": "0 8px 30px rgba(24, 52, 33, .035)", "purpose": "Quiet separation for task cards." },
+      { "name": "hero", "value": "0 13px 30px rgba(20, 55, 42, .08)", "purpose": "Lift the dark summary hero." },
+      { "name": "auth", "value": "0 22px 70px rgba(20, 54, 37, .09)", "purpose": "Ambient depth for the login card." }
+    ],
+    "motion": [{ "name": "mobile-drawer", "value": "transform 0.2s", "purpose": "Reveal mobile navigation." }],
+    "breakpoints": [{ "name": "tablet", "value": "1020px" }, { "name": "mobile", "value": "720px" }]
+  },
+  "components": [
+    { "name": "Primary Button", "kind": "button", "refersTo": "button-primary", "description": "Main form action.", "html": "<button class=\"ds-btn-primary\">Guardar</button>", "css": ".ds-btn-primary{background:var(--green);color:#fff;border:1px solid var(--green);border-radius:8px;padding:9px 16px;font:700 13px Arial,Helvetica,sans-serif;cursor:pointer}.ds-btn-primary:hover{background:#0d3d2d}.ds-btn-primary:focus-visible{outline:3px solid #a7d8bb;outline-offset:2px}" },
+    { "name": "Secondary Button", "kind": "button", "refersTo": "button-secondary", "description": "Supporting task action.", "html": "<button class=\"ds-btn-secondary\">Ver detalhes</button>", "css": ".ds-btn-secondary{background:#eaf5ec;color:#1b6046;border:1px solid #c5d9ca;border-radius:8px;padding:9px 16px;font:700 13px Arial,Helvetica,sans-serif;cursor:pointer}.ds-btn-secondary:hover{background:#dcf0e3}.ds-btn-secondary:focus-visible{outline:3px solid #a7d8bb;outline-offset:2px}" },
+    { "name": "Input", "kind": "input", "description": "Accounting form field.", "html": "<label class=\"ds-field\">Descrição<input class=\"ds-input\" placeholder=\"Descrição do movimento\"></label>", "css": ".ds-field{display:block;color:#40594b;font:600 13px Arial,Helvetica,sans-serif}.ds-input{display:block;width:100%;min-height:43px;padding:10px 12px;margin-top:7px;border:1px solid #d6e2d9;border-radius:8px;background:#fff;color:var(--ink);font:13px Arial,Helvetica,sans-serif}.ds-input:focus-visible{outline:3px solid #a7d8bb;outline-offset:2px}" },
+    { "name": "Navigation Item", "kind": "nav", "description": "Active sidebar destination.", "html": "<nav><button class=\"ds-nav-item\" aria-current=\"page\">Visão geral</button></nav>", "css": ".ds-nav-item{width:100%;height:42px;padding:0 13px;border:0;border-radius:9px;background:#e9f4ed;color:#1b6046;text-align:left;font:600 13px Arial,Helvetica,sans-serif;cursor:pointer}.ds-nav-item:hover{background:#dcefe2}.ds-nav-item:focus-visible{outline:3px solid #a7d8bb;outline-offset:2px}" },
+    { "name": "Task Card", "kind": "card", "refersTo": "card", "description": "Primary task container.", "html": "<section class=\"ds-card\"><h2>Movimentos</h2><p>Regista entradas e saídas.</p></section>", "css": ".ds-card{padding:24px;border:1px solid #e4ebe4;border-radius:16px;background:#fff;color:var(--ink);box-shadow:0 8px 30px rgba(24,52,33,.035);font:13px Arial,Helvetica,sans-serif}.ds-card h2{margin:0 0 12px;font-size:19px}.ds-card p{margin:0;color:var(--muted)}" }
+  ],
+  "narrative": {
+    "northStar": "O centro financeiro claro",
+    "overview": "The authenticated workspace extends the green and white demo. Its visual language stays calm and practical: a fixed navigation rail, a slim context bar, a dark green summary hero, and light cards for discrete tasks. The same brand mark and type stack appear on the login screens.",
+    "keyCharacteristics": ["Portuguese labels", "compact task controls", "generous card spacing", "visible active navigation", "real data clearly distinguished from the demo"],
+    "rules": [{ "name": "The Green Hierarchy Rule", "body": "Use the dark green for primary action and identity; use pale green for selected or supporting states.", "section": "colors" }],
+    "dos": ["Do carry the demo's green mark, sidebar, top bar, and card language into authenticated screens.", "Do use actual organization data and plain Portuguese labels in the live workspace.", "Do keep primary actions and active navigation visibly distinct."],
+    "donts": ["Don't introduce a separate visual identity for login or accounting modules.", "Don't present demo figures as live financial data."]
+  }
+}
