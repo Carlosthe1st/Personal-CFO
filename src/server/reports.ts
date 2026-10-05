@@ -1,8 +1,20 @@
 import 'server-only'
 import { and, asc, eq, gte, lte, sql } from 'drizzle-orm'
 import { getDb } from '../db/client'
-import { accounts, journalEntries, journalLines } from '../db/schema'
-import { InvalidInputError, requireMember, uuidPattern } from './authorization'
+import {
+  accounts,
+  funds,
+  journalEntries,
+  journalLines,
+  movementChanges,
+  movements,
+} from '../db/schema'
+import {
+  ForbiddenError,
+  InvalidInputError,
+  requireMember,
+  uuidPattern,
+} from './authorization'
 
 function validDate(value: string) {
   const date = new Date(`${value}T00:00:00Z`)
@@ -31,6 +43,7 @@ export async function getReports(
   from: string,
   to: string,
   accountId?: string,
+  fundId?: string,
 ) {
   await requireMember(actorId, organizationId, [
     'owner',
@@ -39,6 +52,16 @@ export async function getReports(
     'reader',
   ])
   assertReportPeriod(from, to, accountId)
+  if (fundId) {
+    if (!uuidPattern.test(fundId)) throw new InvalidInputError()
+    const [fund] = await getDb()
+      .select({ id: funds.id })
+      .from(funds)
+      .where(
+        and(eq(funds.id, fundId), eq(funds.organizationId, organizationId)),
+      )
+    if (!fund) throw new ForbiddenError()
+  }
   return getDb().transaction(
     async (tx) => {
       const balances = await tx
@@ -67,7 +90,27 @@ export async function getReports(
             eq(journalEntries.status, 'posted'),
           ),
         )
-        .where(eq(accounts.organizationId, organizationId))
+        .leftJoin(
+          movements,
+          and(
+            eq(movements.journalEntryId, journalEntries.id),
+            eq(movements.organizationId, accounts.organizationId),
+          ),
+        )
+        .leftJoin(
+          movementChanges,
+          and(
+            eq(movementChanges.movementId, movements.id),
+            eq(movementChanges.organizationId, accounts.organizationId),
+          ),
+        )
+        .where(
+          and(
+            eq(accounts.organizationId, organizationId),
+            fundId ? eq(movements.fundId, fundId) : undefined,
+            fundId ? sql`${movementChanges.id} is null` : undefined,
+          ),
+        )
         .groupBy(accounts.id, accounts.code, accounts.name, accounts.kind)
         .orderBy(asc(accounts.code))
       const rows = balances.map((account) => ({
@@ -121,6 +164,20 @@ export async function getReports(
             eq(accounts.organizationId, journalEntries.organizationId),
           ),
         )
+        .leftJoin(
+          movements,
+          and(
+            eq(movements.journalEntryId, journalEntries.id),
+            eq(movements.organizationId, journalEntries.organizationId),
+          ),
+        )
+        .leftJoin(
+          movementChanges,
+          and(
+            eq(movementChanges.movementId, movements.id),
+            eq(movementChanges.organizationId, journalEntries.organizationId),
+          ),
+        )
         .where(
           and(
             eq(journalEntries.organizationId, organizationId),
@@ -128,6 +185,8 @@ export async function getReports(
             gte(journalEntries.date, from),
             lte(journalEntries.date, to),
             accountId ? eq(accounts.id, accountId) : undefined,
+            fundId ? eq(movements.fundId, fundId) : undefined,
+            fundId ? sql`${movementChanges.id} is null` : undefined,
           ),
         )
         .orderBy(

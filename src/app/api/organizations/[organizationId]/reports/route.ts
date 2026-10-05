@@ -14,6 +14,7 @@ export async function GET(
         request.nextUrl.searchParams.get('from') ?? '',
         request.nextUrl.searchParams.get('to') ?? '',
         request.nextUrl.searchParams.get('accountId') || undefined,
+        request.nextUrl.searchParams.get('fundId') || undefined,
       ),
     ),
   )

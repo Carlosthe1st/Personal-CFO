@@ -12,6 +12,314 @@ type Cell = {
   realizedCents: string
   availableCents: string
 }
+
+type Fund = { id: string; name: string; active: boolean; version: number }
+type FundBudget = {
+  year: number
+  funds: Fund[]
+  cells: {
+    fundId: string
+    month: number
+    plannedCents: number
+    realizedCents: string
+    availableCents: string
+  }[]
+  events: { id: string; mode: string; reason: string }[]
+  annualCents: string
+  plannedCents: string
+  warnings: string[]
+}
+
+export function FundBudgetPanel({
+  organizationId,
+  role,
+  funds,
+}: {
+  organizationId: string
+  role: 'owner' | 'admin' | 'editor' | 'reader'
+  funds: Fund[]
+}) {
+  const [open, setOpen] = useState(false)
+  const [year, setYear] = useState(() =>
+    Number(portugalDate(new Date()).slice(0, 4)),
+  )
+  const [budget, setBudget] = useState<FundBudget | null>(null)
+  const [revision, setRevision] = useState(0)
+  const [fundId, setFundId] = useState('')
+  const [month, setMonth] = useState(1)
+  const [amount, setAmount] = useState('')
+  const [reason, setReason] = useState('')
+  const [fromFundId, setFromFundId] = useState('')
+  const [fromMonth, setFromMonth] = useState(1)
+  const [toFundId, setToFundId] = useState('')
+  const [toMonth, setToMonth] = useState(1)
+  const [transferAmount, setTransferAmount] = useState('')
+  const [transferReason, setTransferReason] = useState('')
+  const [pending, setPending] = useState(false)
+  const [error, setError] = useState('')
+  const operation = useRef({
+    revise: crypto.randomUUID(),
+    transfer: crypto.randomUUID(),
+  })
+  const canManage = role === 'owner' || role === 'admin'
+  useEffect(() => {
+    if (!open) return
+    const controller = new AbortController()
+    fetch(`/api/organizations/${organizationId}/funds/budgets?year=${year}`, {
+      signal: controller.signal,
+      cache: 'no-store',
+    })
+      .then((response) => {
+        if (!response.ok)
+          throw new Error('Não foi possível consultar as verbas dos fundos.')
+        return response.json() as Promise<FundBudget>
+      })
+      .then((data) => {
+        if (!controller.signal.aborted) setBudget(data)
+      })
+      .catch((cause: unknown) => {
+        if (!controller.signal.aborted)
+          setError(cause instanceof Error ? cause.message : 'Erro de ligação.')
+      })
+    return () => controller.abort()
+  }, [open, organizationId, year, revision])
+  async function save(
+    mode: 'revise' | 'transfer',
+    event: FormEvent<HTMLFormElement>,
+  ) {
+    event.preventDefault()
+    if (pending) return
+    const amountCents = cents(mode === 'revise' ? amount : transferAmount)
+    if (amountCents === null || (mode === 'transfer' && amountCents === 0)) {
+      setError('Confirma o valor da verba.')
+      return
+    }
+    setPending(true)
+    setError('')
+    try {
+      const response = await fetch(
+        `/api/organizations/${organizationId}/funds/budgets`,
+        {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({
+            year,
+            mode,
+            operationId: operation.current[mode],
+            reason: mode === 'revise' ? reason : transferReason,
+            amountCents,
+            to:
+              mode === 'revise'
+                ? { fundId, month }
+                : { fundId: toFundId, month: toMonth },
+            ...(mode === 'transfer'
+              ? { from: { fundId: fromFundId, month: fromMonth } }
+              : {}),
+          }),
+        },
+      )
+      if (!response.ok)
+        throw new Error('Não foi possível guardar a verba do fundo.')
+      operation.current[mode] = crypto.randomUUID()
+      setRevision((value) => value + 1)
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Erro de ligação.')
+    } finally {
+      setPending(false)
+    }
+  }
+  const fundOptions = funds
+    .filter((fund) => fund.active)
+    .map((fund) => (
+      <option key={fund.id} value={fund.id}>
+        {fund.name}
+      </option>
+    ))
+  const monthOptions = months.map((name, index) => (
+    <option key={name} value={index + 1}>
+      {name}
+    </option>
+  ))
+  return (
+    <section>
+      <h2>Verbas por fundo</h2>
+      <button type="button" onClick={() => setOpen((value) => !value)}>
+        {open ? 'Fechar verbas por fundo' : 'Abrir verbas por fundo'}
+      </button>
+      {open && (
+        <>
+          <label>
+            Ano das verbas{' '}
+            <input
+              type="number"
+              min={1900}
+              max={9998}
+              value={year}
+              onChange={(event) => setYear(Number(event.target.value))}
+            />
+          </label>
+          {error && <p role="alert">{error}</p>}
+          {budget && (
+            <>
+              <p>
+                Orçamento geral: {euro(budget.annualCents)} · Verbas dos fundos:{' '}
+                {euro(budget.plannedCents)}
+              </p>
+              {budget.warnings.length > 0 && (
+                <p role="alert">
+                  As verbas dos fundos excedem o orçamento geral.
+                </p>
+              )}
+              <table>
+                <thead>
+                  <tr>
+                    <th>Fundo e mês</th>
+                    <th>Planeado</th>
+                    <th>Realizado</th>
+                    <th>Disponível</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {budget.cells.map((cell) => (
+                    <tr key={`${cell.fundId}:${cell.month}`}>
+                      <td>
+                        {funds.find((fund) => fund.id === cell.fundId)?.name ??
+                          'Fundo arquivado'}{' '}
+                        · {months[cell.month - 1]}
+                      </td>
+                      <td>{euro(cell.plannedCents)}</td>
+                      <td>{euro(cell.realizedCents)}</td>
+                      <td>{euro(cell.availableCents)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              <h3>Histórico das verbas</h3>
+              <ul>
+                {budget.events.map((item) => (
+                  <li key={item.id}>
+                    {item.mode === 'transfer' ? 'Transferência' : 'Revisão'} ·{' '}
+                    {item.reason}
+                  </li>
+                ))}
+              </ul>
+            </>
+          )}
+          {canManage && (
+            <>
+              <form onSubmit={(event) => save('revise', event)}>
+                <h3>Rever verba</h3>
+                <label>
+                  Fundo a planear{' '}
+                  <select
+                    required
+                    value={fundId}
+                    onChange={(event) => setFundId(event.target.value)}
+                  >
+                    <option value="">Selecionar</option>
+                    {fundOptions}
+                  </select>
+                </label>
+                <label>
+                  Mês a planear{' '}
+                  <select
+                    value={month}
+                    onChange={(event) => setMonth(Number(event.target.value))}
+                  >
+                    {monthOptions}
+                  </select>
+                </label>
+                <label>
+                  Verba do fundo em EUR{' '}
+                  <input
+                    required
+                    value={amount}
+                    onChange={(event) => setAmount(event.target.value)}
+                  />
+                </label>
+                <label>
+                  Motivo da revisão do fundo{' '}
+                  <input
+                    required
+                    value={reason}
+                    onChange={(event) => setReason(event.target.value)}
+                  />
+                </label>
+                <button type="submit" disabled={pending}>
+                  Guardar verba do fundo
+                </button>
+              </form>
+              <form onSubmit={(event) => save('transfer', event)}>
+                <h3>Transferir verba entre fundos</h3>
+                <label>
+                  Fundo de origem{' '}
+                  <select
+                    required
+                    value={fromFundId}
+                    onChange={(event) => setFromFundId(event.target.value)}
+                  >
+                    <option value="">Selecionar</option>
+                    {fundOptions}
+                  </select>
+                </label>
+                <label>
+                  Mês de origem do fundo{' '}
+                  <select
+                    value={fromMonth}
+                    onChange={(event) =>
+                      setFromMonth(Number(event.target.value))
+                    }
+                  >
+                    {monthOptions}
+                  </select>
+                </label>
+                <label>
+                  Fundo de destino{' '}
+                  <select
+                    required
+                    value={toFundId}
+                    onChange={(event) => setToFundId(event.target.value)}
+                  >
+                    <option value="">Selecionar</option>
+                    {fundOptions}
+                  </select>
+                </label>
+                <label>
+                  Mês de destino do fundo{' '}
+                  <select
+                    value={toMonth}
+                    onChange={(event) => setToMonth(Number(event.target.value))}
+                  >
+                    {monthOptions}
+                  </select>
+                </label>
+                <label>
+                  Transferir entre fundos em EUR{' '}
+                  <input
+                    required
+                    value={transferAmount}
+                    onChange={(event) => setTransferAmount(event.target.value)}
+                  />
+                </label>
+                <label>
+                  Motivo da transferência de fundos{' '}
+                  <input
+                    required
+                    value={transferReason}
+                    onChange={(event) => setTransferReason(event.target.value)}
+                  />
+                </label>
+                <button type="submit" disabled={pending}>
+                  Transferir entre fundos
+                </button>
+              </form>
+            </>
+          )}
+        </>
+      )}
+    </section>
+  )
+}
 type Budget = {
   year: number
   fiscalYearStartMonth: number
@@ -294,10 +602,14 @@ export function BudgetPanel({
                       Guardar verba anual
                     </button>
                   </form>
-                  <CategoryCreator organizationId={organizationId} kind="expense" onCreated={(id) => {
-                    setCategory(id)
-                    onAccountsChanged?.()
-                  }} />
+                  <CategoryCreator
+                    organizationId={organizationId}
+                    kind="expense"
+                    onCreated={(id) => {
+                      setCategory(id)
+                      onAccountsChanged?.()
+                    }}
+                  />
                   <form onSubmit={(event) => submit('cell', event)}>
                     <label>
                       Mês a planear{' '}

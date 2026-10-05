@@ -13,6 +13,7 @@ export async function GET(
       from: request.nextUrl.searchParams.get('from') ?? '',
       to: request.nextUrl.searchParams.get('to') ?? '',
       accountId: request.nextUrl.searchParams.get('accountId') || undefined,
+      fundId: request.nextUrl.searchParams.get('fundId') || undefined,
       format: request.nextUrl.searchParams.get('format') as 'csv' | 'pdf',
     })
     return new Response(Buffer.from(result.body), {

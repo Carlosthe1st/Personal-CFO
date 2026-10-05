@@ -120,6 +120,13 @@
       "when": 1791239901759,
       "tag": "0016_harsh_dreadnoughts",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1791240238429,
+      "tag": "0017_hesitant_radioactive_man",
+      "breakpoints": true
     }
   ]
 }

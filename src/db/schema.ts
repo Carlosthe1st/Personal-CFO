@@ -255,6 +255,61 @@ export const funds = pgTable(
     check('fund_name', sql`length(trim(${t.name})) between 1 and 100`),
   ],
 )
+export const fundAllocations = pgTable(
+  'fund_allocations',
+  {
+    organizationId: uuid('organization_id').notNull(),
+    fundId: uuid('fund_id').notNull(),
+    year: integer('year').notNull(),
+    month: integer('month').notNull(),
+    plannedCents: bigint('planned_cents', { mode: 'number' })
+      .notNull()
+      .default(0),
+  },
+  (t) => [
+    primaryKey({ columns: [t.organizationId, t.fundId, t.year, t.month] }),
+    foreignKey({
+      columns: [t.organizationId, t.fundId],
+      foreignColumns: [funds.organizationId, funds.id],
+    }),
+    check('fund_allocation_year', sql`${t.year} between 1900 and 9998`),
+    check('fund_allocation_month', sql`${t.month} between 1 and 12`),
+    check(
+      'fund_allocation_cents',
+      sql`${t.plannedCents} between 0 and 9007199254740991`,
+    ),
+  ],
+)
+export const fundAllocationEvents = pgTable(
+  'fund_allocation_events',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    organizationId: uuid('organization_id')
+      .notNull()
+      .references(() => organizations.id),
+    actorId: uuid('actor_id')
+      .notNull()
+      .references(() => users.id),
+    year: integer('year').notNull(),
+    operationId: text('operation_id').notNull(),
+    requestHash: text('request_hash').notNull(),
+    mode: text('mode').$type<'revise' | 'transfer'>().notNull(),
+    reason: text('reason').notNull(),
+    before: jsonb('before').notNull(),
+    after: jsonb('after').notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [
+    unique('fund_allocation_operation').on(t.organizationId, t.operationId),
+    check(
+      'fund_allocation_event_mode',
+      sql`${t.mode} in ('revise','transfer')`,
+    ),
+    check('fund_allocation_event_year', sql`${t.year} between 1900 and 9998`),
+  ],
+)
 export const movements = pgTable(
   'movements',
   {

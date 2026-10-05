@@ -13,14 +13,17 @@ function money(value: string) {
 export function ReportPanel({
   organizationId,
   accounts,
+  funds = [],
 }: {
   organizationId: string
   accounts: { id: string; name: string }[]
+  funds?: { id: string; name: string }[]
 }) {
   const today = portugalDate(new Date())
   const [from, setFrom] = useState(`${today.slice(0, 4)}-01-01`)
   const [to, setTo] = useState(today)
   const [accountId, setAccountId] = useState('')
+  const [fundId, setFundId] = useState('')
   const [report, setReport] = useState<Report | null>(null)
   const [pending, setPending] = useState(false)
   const [error, setError] = useState('')
@@ -29,14 +32,19 @@ export function ReportPanel({
     /^\d{4}-\d{2}-\d{2}$/.test(to) &&
     from <= to
   const exportUrl = (format: 'csv' | 'pdf') =>
-    `/api/organizations/${organizationId}/reports/export?${new URLSearchParams({ from, to, accountId, format })}`
+    `/api/organizations/${organizationId}/reports/export?${new URLSearchParams({ from, to, accountId, ...(fundId ? { fundId } : {}), format })}`
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     if (pending) return
     setPending(true)
     setError('')
     try {
-      const query = new URLSearchParams({ from, to, accountId })
+      const query = new URLSearchParams({
+        from,
+        to,
+        accountId,
+        ...(fundId ? { fundId } : {}),
+      })
       const response = await fetch(
         `/api/organizations/${organizationId}/reports?${query}`,
         { cache: 'no-store' },
@@ -85,6 +93,20 @@ export function ReportPanel({
               {accounts.map((account) => (
                 <option key={account.id} value={account.id}>
                   {account.name}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label>
+            Fundo no relatório{' '}
+            <select
+              value={fundId}
+              onChange={(event) => setFundId(event.target.value)}
+            >
+              <option value="">Todos</option>
+              {funds.map((fund) => (
+                <option key={fund.id} value={fund.id}>
+                  {fund.name}
                 </option>
               ))}
             </select>

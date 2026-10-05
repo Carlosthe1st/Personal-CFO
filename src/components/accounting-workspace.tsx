@@ -18,7 +18,7 @@ import type { MemberRole, AccountKind } from '../db/schema'
 import type { JournalEntryView } from '../server/journal'
 import { formatEuro } from '../lib/finance'
 import { portugalDate } from '../lib/date'
-import { BudgetPanel } from './budget-panel'
+import { BudgetPanel, FundBudgetPanel } from './budget-panel'
 import { AccountManager } from './account-manager'
 import { CategoryCreator } from './category-creator'
 import { ReportPanel } from './report-panel'
@@ -571,6 +571,11 @@ export function AccountingWorkspace({
                     accounts={accounts}
                     onAccountsChanged={() => setRevision((value) => value + 1)}
                   />
+                  <FundBudgetPanel
+                    organizationId={organizationId}
+                    role={selectedOrganization?.role ?? 'reader'}
+                    funds={funds}
+                  />
                 </div>
               )}
               {view === 'journal' && (
@@ -624,6 +629,7 @@ export function AccountingWorkspace({
                     key={`reports-${organizationId}`}
                     organizationId={organizationId}
                     accounts={accounts}
+                    funds={funds}
                   />
                 </div>
               )}

@@ -1,15 +1,22 @@
 import 'server-only'
-import { and, asc, eq, gte, lte } from 'drizzle-orm'
+import { and, asc, eq, gte, lte, sql } from 'drizzle-orm'
 import PDFDocument from 'pdfkit'
 import { getDb } from '../db/client'
 import {
   accounts,
+  funds,
   journalEntries,
   journalLines,
   movements,
+  movementChanges,
   organizations,
 } from '../db/schema'
-import { InvalidInputError, requireMember } from './authorization'
+import {
+  ForbiddenError,
+  InvalidInputError,
+  requireMember,
+  uuidPattern,
+} from './authorization'
 import { assertReportPeriod } from './reports'
 
 export type ExportRequest = {
@@ -18,6 +25,7 @@ export type ExportRequest = {
   from: string
   to: string
   accountId?: string
+  fundId?: string
   format: 'csv' | 'pdf'
 }
 
@@ -29,6 +37,7 @@ type ExportRow = {
   code: string
   account: string
   category: string
+  fund: string
   side: 'debit' | 'credit'
   amountCents: string
   type: string
@@ -58,6 +67,7 @@ async function queryExportRows(input: ExportRequest) {
       side: journalLines.side,
       amountCents: journalLines.amountCents,
       type: movements.type,
+      fund: funds.name,
     })
     .from(journalEntries)
     .innerJoin(
@@ -81,6 +91,20 @@ async function queryExportRows(input: ExportRequest) {
         eq(movements.organizationId, journalEntries.organizationId),
       ),
     )
+    .leftJoin(
+      funds,
+      and(
+        eq(funds.id, movements.fundId),
+        eq(funds.organizationId, journalEntries.organizationId),
+      ),
+    )
+    .leftJoin(
+      movementChanges,
+      and(
+        eq(movementChanges.movementId, movements.id),
+        eq(movementChanges.organizationId, journalEntries.organizationId),
+      ),
+    )
     .where(
       and(
         eq(journalEntries.organizationId, input.organizationId),
@@ -88,6 +112,8 @@ async function queryExportRows(input: ExportRequest) {
         gte(journalEntries.date, input.from),
         lte(journalEntries.date, input.to),
         input.accountId ? eq(accounts.id, input.accountId) : undefined,
+        input.fundId ? eq(movements.fundId, input.fundId) : undefined,
+        input.fundId ? sql`${movementChanges.id} is null` : undefined,
       ),
     )
     .orderBy(
@@ -104,6 +130,7 @@ async function queryExportRows(input: ExportRequest) {
     code: row.code,
     account: row.account,
     category: row.kind,
+    fund: row.fund ?? 'Sem fundo',
     side: row.side,
     amountCents: String(row.amountCents),
     type: row.type ?? 'journal',
@@ -120,6 +147,7 @@ function makeCsv(rows: ExportRow[]) {
     'Tipo',
     'Conta',
     'Categoria',
+    'Fundo',
     'Lado',
     'Valor (EUR)',
     'Estado',
@@ -134,6 +162,7 @@ function makeCsv(rows: ExportRow[]) {
       row.type,
       `${row.code} · ${row.account}`,
       row.category,
+      row.fund,
       row.side === 'debit' ? 'Débito' : 'Crédito',
       amount(row.amountCents),
       row.status,
@@ -159,6 +188,7 @@ async function makePdf(rows: ExportRow[], input: ExportRequest) {
   })
   doc.fontSize(18).text(`Relatório financeiro — ${organization.name}`)
   doc.fontSize(10).text(`Período: ${input.from} a ${input.to}`)
+  if (input.fundId) doc.text(`Fundo: ${rows[0]?.fund ?? input.fundId}`)
   doc.text(`Linhas contabilísticas: ${rows.length}`)
   if (rows.length === 0) doc.moveDown().text('Sem lançamentos no período.')
   const totals = new Map<string, { debit: bigint; credit: bigint }>()
@@ -195,6 +225,19 @@ export async function exportReport(
     'reader',
   ])
   assertReportPeriod(input.from, input.to, input.accountId)
+  if (input.fundId) {
+    if (!uuidPattern.test(input.fundId)) throw new InvalidInputError()
+    const [fund] = await getDb()
+      .select({ id: funds.id })
+      .from(funds)
+      .where(
+        and(
+          eq(funds.id, input.fundId),
+          eq(funds.organizationId, input.organizationId),
+        ),
+      )
+    if (!fund) throw new ForbiddenError()
+  }
   if (input.format !== 'csv' && input.format !== 'pdf')
     throw new InvalidInputError()
   const rows = await queryExportRows(input)
