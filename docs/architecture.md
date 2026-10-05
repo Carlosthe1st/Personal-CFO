@@ -21,3 +21,6 @@ A interpretação local gera uma proposta com confiança e estado `suggested`; s
 ## Integrações futuras
 
 Uma porta `AIProvider` descreve análise de transações, documentos e perguntas. As implementações futuras devem correr no servidor, com chaves em variáveis de ambiente. Documentos, voz e extratos entram através de adaptadores de origem e produzem propostas antes de qualquer confirmação.
+# Private movement receipts
+
+Receipt metadata lives in PostgreSQL; PDF/JPEG/PNG bytes (up to 5 MB, five active files per movement) live in the private Supabase Storage bucket `movement-receipts`. Only authenticated app routes read or write objects, after organization and role checks. The service-role key must remain server-only. Detached receipts retain metadata and an audit event; object retention and cleanup are an operational responsibility. Upload is hidden until `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` are configured.

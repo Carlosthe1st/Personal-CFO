@@ -21,12 +21,16 @@ export function MovementHistory({
   organizationId,
   accounts,
   canEdit,
+  canManageReceipts = false,
+  receiptStorageConfigured = true,
   revision,
   onSaved,
 }: {
   organizationId: string
   accounts: Account[]
   canEdit: boolean
+  canManageReceipts?: boolean
+  receiptStorageConfigured?: boolean
   revision: number
   onSaved: () => void
 }) {
@@ -159,7 +163,14 @@ export function MovementHistory({
               : row.status === 'corrected'
                 ? 'Corrigido'
                 : 'Removido'}
-            {row.change && ` · Motivo: ${row.change.reason}`}
+            {row.change && ` · Motivo: ${row.change.reason}`}{' '}
+            <ReceiptAttachments
+              organizationId={organizationId}
+              movement={row}
+              canEdit={canEdit}
+              canManage={canManageReceipts}
+              configured={receiptStorageConfigured}
+            />
             {canEdit && row.status === 'active' && (
               <>
                 {' '}
@@ -288,5 +299,134 @@ export function MovementHistory({
         </form>
       )}
     </section>
+  )
+}
+
+type Receipt = { id: string; name: string; mime: string; size: number }
+function ReceiptAttachments({
+  organizationId,
+  movement,
+  canEdit,
+  canManage,
+  configured,
+}: {
+  organizationId: string
+  movement: Movement
+  canEdit: boolean
+  canManage: boolean
+  configured: boolean
+}) {
+  const [open, setOpen] = useState(false)
+  const [receipts, setReceipts] = useState<Receipt[]>([])
+  const [file, setFile] = useState<File | null>(null)
+  const [pending, setPending] = useState(false)
+  const [error, setError] = useState('')
+  const base = `/api/organizations/${organizationId}/movements/${movement.id}/receipts`
+  async function refresh() {
+    const response = await fetch(base, { cache: 'no-store' })
+    if (!response.ok)
+      throw new Error('Não foi possível consultar comprovativos.')
+    setReceipts(await response.json())
+  }
+  async function toggle() {
+    if (open) {
+      setOpen(false)
+      return
+    }
+    setOpen(true)
+    setError('')
+    try {
+      await refresh()
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Erro de ligação.')
+    }
+  }
+  async function upload() {
+    if (!file || pending) return
+    setPending(true)
+    setError('')
+    try {
+      const data = new FormData()
+      data.set('file', file)
+      const response = await fetch(base, { method: 'POST', body: data })
+      if (!response.ok)
+        throw new Error('Não foi possível anexar o comprovativo.')
+      setFile(null)
+      await refresh()
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Erro de ligação.')
+    } finally {
+      setPending(false)
+    }
+  }
+  async function detach(receiptId: string) {
+    if (pending) return
+    setPending(true)
+    setError('')
+    try {
+      const response = await fetch(`${base}/${receiptId}`, { method: 'DELETE' })
+      if (!response.ok)
+        throw new Error('Não foi possível desassociar o comprovativo.')
+      await refresh()
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Erro de ligação.')
+    } finally {
+      setPending(false)
+    }
+  }
+  return (
+    <span>
+      <button type="button" onClick={toggle} aria-expanded={open}>
+        Comprovativos de {movement.description}
+      </button>
+      {open && (
+        <span>
+          {' '}
+          ({receipts.length}/5)
+          {movement.status !== 'active' && (
+            <span> · Comprovativos do movimento original</span>
+          )}
+          {receipts.map((receipt) => (
+            <span key={receipt.id}>
+              {' '}
+              <a href={`${base}/${receipt.id}`}>{receipt.name}</a>
+              {canManage && (
+                <button
+                  type="button"
+                  onClick={() => detach(receipt.id)}
+                  disabled={pending}
+                >
+                  Desassociar {receipt.name}
+                </button>
+              )}
+            </span>
+          ))}
+          {canEdit && configured && receipts.length < 5 && (
+            <span>
+              {' '}
+              <label>
+                Comprovativo{' '}
+                <input
+                  type="file"
+                  accept="application/pdf,image/jpeg,image/png"
+                  onChange={(event) => setFile(event.target.files?.[0] ?? null)}
+                />
+              </label>
+              <button
+                type="button"
+                disabled={!file || pending}
+                onClick={upload}
+              >
+                {pending ? 'A anexar…' : 'Anexar comprovativo'}
+              </button>
+            </span>
+          )}
+          {canEdit && !configured && (
+            <span> · Anexos indisponíveis: armazenamento por configurar.</span>
+          )}
+          {error && <span role="alert">{error}</span>}
+        </span>
+      )}
+    </span>
   )
 }

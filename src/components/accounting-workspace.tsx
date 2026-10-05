@@ -55,8 +55,10 @@ async function read<T>(url: string, signal: AbortSignal): Promise<T> {
 }
 export function AccountingWorkspace({
   organizations,
+  receiptStorageConfigured = false,
 }: {
   organizations: Organization[]
+  receiptStorageConfigured?: boolean
 }) {
   const [ownOrganizations, setOwnOrganizations] = useState(organizations)
   const [organizationId, setOrganizationId] = useState(
@@ -81,7 +83,8 @@ export function AccountingWorkspace({
   const canManage =
     selectedOrganization?.role === 'owner' ||
     selectedOrganization?.role === 'admin'
-  const canWrite = !!selectedOrganization && selectedOrganization.role !== 'reader'
+  const canWrite =
+    !!selectedOrganization && selectedOrganization.role !== 'reader'
   const summary = useMemo(() => {
     const byId = new Map(accounts.map((account) => [account.id, account]))
     const month = portugalDate(new Date()).slice(0, 7)
@@ -93,13 +96,17 @@ export function AccountingWorkspace({
       for (const line of entry.lines) {
         const account = byId.get(line.accountId)
         if (!account) continue
-        const debit = line.side === 'debit' ? line.amountCents : -line.amountCents
+        const debit =
+          line.side === 'debit' ? line.amountCents : -line.amountCents
         if (account.kind === 'cash' || account.kind === 'bank') balance += debit
         if (!entry.date.startsWith(month)) continue
         if (account.kind === 'income') income -= debit
         if (account.kind === 'expense') {
           expenses += debit
-          categories.set(account.name, (categories.get(account.name) ?? 0) + debit)
+          categories.set(
+            account.name,
+            (categories.get(account.name) ?? 0) + debit,
+          )
         }
       }
     }
@@ -156,11 +163,17 @@ export function AccountingWorkspace({
     const previousOverflow = document.body.style.overflow
     const menuToggle = menuToggleRef.current
     document.body.style.overflow = 'hidden'
-    sidebarRef.current?.querySelector<HTMLButtonElement>('.mobile-close')?.focus()
+    sidebarRef.current
+      ?.querySelector<HTMLButtonElement>('.mobile-close')
+      ?.focus()
     function onKeyDown(event: KeyboardEvent) {
       if (event.key === 'Escape') setMobileMenu(false)
       if (event.key !== 'Tab' || !sidebarRef.current) return
-      const focusable = [...sidebarRef.current.querySelectorAll<HTMLElement>('button:not([disabled]), a[href], select:not([disabled])')]
+      const focusable = [
+        ...sidebarRef.current.querySelectorAll<HTMLElement>(
+          'button:not([disabled]), a[href], select:not([disabled])',
+        ),
+      ]
       const first = focusable[0]
       const last = focusable.at(-1)
       if (event.shiftKey && document.activeElement === first) {
@@ -224,8 +237,21 @@ export function AccountingWorkspace({
   }, [organizationId, revision])
   return (
     <div className="app-frame accounting-frame">
-      {mobileMenu && <button type="button" className="accounting-backdrop" aria-label="Fechar menu" onClick={() => setMobileMenu(false)} />}
-      <aside ref={sidebarRef} className={`sidebar ${mobileMenu ? 'sidebar-open' : ''}`} role={mobileMenu ? 'dialog' : undefined} aria-modal={mobileMenu ? true : undefined} aria-label={mobileMenu ? 'Menu principal' : undefined}>
+      {mobileMenu && (
+        <button
+          type="button"
+          className="accounting-backdrop"
+          aria-label="Fechar menu"
+          onClick={() => setMobileMenu(false)}
+        />
+      )}
+      <aside
+        ref={sidebarRef}
+        className={`sidebar ${mobileMenu ? 'sidebar-open' : ''}`}
+        role={mobileMenu ? 'dialog' : undefined}
+        aria-modal={mobileMenu ? true : undefined}
+        aria-label={mobileMenu ? 'Menu principal' : undefined}
+      >
         <div className="brand">
           <div className="brand-logo">
             <ChartNoAxesCombined size={23} strokeWidth={2.3} />
@@ -327,7 +353,9 @@ export function AccountingWorkspace({
             </button>
             <span>O teu espaço financeiro</span>
             <span className="top-divider">/</span>
-            <strong>{navigation.find((item) => item.id === view)?.label}</strong>
+            <strong>
+              {navigation.find((item) => item.id === view)?.label}
+            </strong>
           </div>
           <div className="top-actions">
             <span className="accounting-live">DADOS DA ORGANIZAÇÃO</span>
@@ -362,8 +390,15 @@ export function AccountingWorkspace({
           ) : dataError ? (
             <div className="accounting-empty">
               <h1>Não foi possível carregar os dados</h1>
-              <p>Não mostramos valores até confirmar os dados da organização.</p>
-              <button type="button" onClick={() => setRevision((value) => value + 1)}>Tentar novamente</button>
+              <p>
+                Não mostramos valores até confirmar os dados da organização.
+              </p>
+              <button
+                type="button"
+                onClick={() => setRevision((value) => value + 1)}
+              >
+                Tentar novamente
+              </button>
             </div>
           ) : (
             <>
@@ -372,15 +407,24 @@ export function AccountingWorkspace({
                   <div className="greeting">
                     <div>
                       <h1>Visão geral</h1>
-                      <p>O essencial de {selectedOrganization?.name}, num só lugar.</p>
+                      <p>
+                        O essencial de {selectedOrganization?.name}, num só
+                        lugar.
+                      </p>
                     </div>
                   </div>
                   <div className="hero-card accounting-hero">
                     <div className="hero-copy">
                       <span>O TEU CENTRO FINANCEIRO</span>
                       <h2>Clareza para agir.</h2>
-                      <p>Regista, acompanha e revê os movimentos da tua organização.</p>
-                      <button type="button" onClick={() => navigate('movements')}>
+                      <p>
+                        Regista, acompanha e revê os movimentos da tua
+                        organização.
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => navigate('movements')}
+                      >
                         Novo movimento <ArrowLeftRight size={18} />
                       </button>
                     </div>
@@ -390,38 +434,78 @@ export function AccountingWorkspace({
                     </div>
                   </div>
                   <div className="accounting-overview-grid">
-                    <div><span>Saldo disponível</span><strong>{formatEuro(summary.balance / 100)}</strong><small>Caixa e bancos</small></div>
-                    <div><span>Entradas este mês</span><strong>{formatEuro(summary.income / 100)}</strong><small>Receitas confirmadas</small></div>
-                    <div><span>Saídas este mês</span><strong>{formatEuro(summary.expenses / 100)}</strong><small>Despesas confirmadas</small></div>
-                    <div><span>Resultado este mês</span><strong>{formatEuro((summary.income - summary.expenses) / 100)}</strong><small>Entradas menos saídas</small></div>
+                    <div>
+                      <span>Saldo disponível</span>
+                      <strong>{formatEuro(summary.balance / 100)}</strong>
+                      <small>Caixa e bancos</small>
+                    </div>
+                    <div>
+                      <span>Entradas este mês</span>
+                      <strong>{formatEuro(summary.income / 100)}</strong>
+                      <small>Receitas confirmadas</small>
+                    </div>
+                    <div>
+                      <span>Saídas este mês</span>
+                      <strong>{formatEuro(summary.expenses / 100)}</strong>
+                      <small>Despesas confirmadas</small>
+                    </div>
+                    <div>
+                      <span>Resultado este mês</span>
+                      <strong>
+                        {formatEuro((summary.income - summary.expenses) / 100)}
+                      </strong>
+                      <small>Entradas menos saídas</small>
+                    </div>
                   </div>
                   <div className="accounting-insights-grid">
-                  <section className="accounting-recent accounting-categories">
-                    <div className="section-heading"><h2>Despesas por categoria</h2><button type="button" onClick={() => navigate('reports')}>Ver relatórios</button></div>
-                    {summary.categories.length === 0 ? <p>Sem despesas confirmadas este mês.</p> : (
-                      <ul>{summary.categories.slice(0, 5).map(([category, cents]) => <li key={category}><span>{category}</span><strong>{formatEuro(cents / 100)}</strong></li>)}</ul>
-                    )}
-                  </section>
-                  <section className="accounting-recent">
-                    <div className="section-heading">
-                      <h2>Atividade recente</h2>
-                      <button type="button" onClick={() => navigate('journal')}>
-                        Ver diário
-                      </button>
-                    </div>
-                    {journal.length === 0 ? (
-                      <p>Ainda não existem lançamentos confirmados.</p>
-                    ) : (
-                      <ul>
-                        {journal.slice(0, 5).map((entry) => (
-                          <li key={entry.id}>
-                            <span>{entry.description}</span>
-                            <time>{entry.date}</time>
-                          </li>
-                        ))}
-                      </ul>
-                    )}
-                  </section>
+                    <section className="accounting-recent accounting-categories">
+                      <div className="section-heading">
+                        <h2>Despesas por categoria</h2>
+                        <button
+                          type="button"
+                          onClick={() => navigate('reports')}
+                        >
+                          Ver relatórios
+                        </button>
+                      </div>
+                      {summary.categories.length === 0 ? (
+                        <p>Sem despesas confirmadas este mês.</p>
+                      ) : (
+                        <ul>
+                          {summary.categories
+                            .slice(0, 5)
+                            .map(([category, cents]) => (
+                              <li key={category}>
+                                <span>{category}</span>
+                                <strong>{formatEuro(cents / 100)}</strong>
+                              </li>
+                            ))}
+                        </ul>
+                      )}
+                    </section>
+                    <section className="accounting-recent">
+                      <div className="section-heading">
+                        <h2>Atividade recente</h2>
+                        <button
+                          type="button"
+                          onClick={() => navigate('journal')}
+                        >
+                          Ver diário
+                        </button>
+                      </div>
+                      {journal.length === 0 ? (
+                        <p>Ainda não existem lançamentos confirmados.</p>
+                      ) : (
+                        <ul>
+                          {journal.slice(0, 5).map((entry) => (
+                            <li key={entry.id}>
+                              <span>{entry.description}</span>
+                              <time>{entry.date}</time>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </section>
                   </div>
                 </>
               )}
@@ -443,6 +527,8 @@ export function AccountingWorkspace({
                     organizationId={organizationId}
                     accounts={accounts}
                     canEdit={canWrite}
+                    canManageReceipts={canManage}
+                    receiptStorageConfigured={receiptStorageConfigured}
                     revision={revision}
                     onSaved={() => setRevision((value) => value + 1)}
                   />
@@ -491,11 +577,16 @@ export function AccountingWorkspace({
                   <section>
                     <div className="section-heading">
                       <h2>Diário confirmado</h2>
-                      <button type="button" onClick={() => setRevision((value) => value + 1)}>
+                      <button
+                        type="button"
+                        onClick={() => setRevision((value) => value + 1)}
+                      >
                         Atualizar diário
                       </button>
                     </div>
-                    {journal.length === 0 && <p>Sem lançamentos confirmados.</p>}
+                    {journal.length === 0 && (
+                      <p>Sem lançamentos confirmados.</p>
+                    )}
                     {journal.map((entry) => (
                       <div className="accounting-journal-entry" key={entry.id}>
                         <h3>{entry.description}</h3>
@@ -504,7 +595,9 @@ export function AccountingWorkspace({
                           {entry.lines.map((line, index) => (
                             <li key={index}>
                               {line.side === 'debit' ? 'Débito' : 'Crédito'} ·{' '}
-                              {accounts.find((account) => account.id === line.accountId)?.name ?? 'Conta'}{' '}
+                              {accounts.find(
+                                (account) => account.id === line.accountId,
+                              )?.name ?? 'Conta'}{' '}
                               · {formatEuro(line.amountCents / 100)}
                             </li>
                           ))}
@@ -754,14 +847,16 @@ function MovementForm({
             ))}
           </select>
         </label>
-        {canManage && type !== 'transfer' && <CategoryCreator
-          organizationId={organizationId}
-          kind={type}
-          onCreated={(id) => {
-            setCounterAccountId(id)
-            onSaved()
-          }}
-        />}
+        {canManage && type !== 'transfer' && (
+          <CategoryCreator
+            organizationId={organizationId}
+            kind={type}
+            onCreated={(id) => {
+              setCounterAccountId(id)
+              onSaved()
+            }}
+          />
+        )}
         <button type="submit" disabled={pending}>
           {pending ? 'A guardar…' : 'Guardar movimento'}
         </button>
