@@ -284,6 +284,36 @@ export const movements = pgTable(
   ],
 )
 
+export const receiptFiles = pgTable(
+  'receipt_files',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    organizationId: uuid('organization_id').notNull(),
+    movementId: uuid('movement_id').notNull(),
+    actorId: uuid('actor_id')
+      .notNull()
+      .references(() => users.id),
+    objectKey: text('object_key').notNull(),
+    name: text('name').notNull(),
+    mime: text('mime').notNull(),
+    size: integer('size').notNull(),
+    sha256: text('sha256').notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    detachedAt: timestamp('detached_at', { withTimezone: true }),
+  },
+  (t) => [
+    foreignKey({
+      columns: [t.organizationId, t.movementId],
+      foreignColumns: [movements.organizationId, movements.id],
+    }),
+    unique('receipt_object_key').on(t.objectKey),
+    check('receipt_size', sql`${t.size} between 1 and 5000000`),
+    index('receipts_by_movement').on(t.organizationId, t.movementId),
+  ],
+)
+
 export const statementImports = pgTable(
   'statement_imports',
   {

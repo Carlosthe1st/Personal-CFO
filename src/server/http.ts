@@ -6,6 +6,7 @@ import {
   ForbiddenError,
   InvalidInputError,
   ConflictError,
+  PayloadTooLargeError,
 } from './authorization'
 
 export function json(data: unknown, status = 200) {
@@ -21,6 +22,8 @@ export function errorResponse(error: unknown) {
     return json({ error: 'Acesso negado.' }, 403)
   if (error instanceof InvalidInputError || error instanceof SyntaxError)
     return json({ error: 'Dados inválidos.' }, 400)
+  if (error instanceof PayloadTooLargeError)
+    return json({ error: 'Ficheiro demasiado grande.' }, 413)
   if (error instanceof ConflictError)
     return json(
       { error: 'Esta operação já foi usada com dados diferentes.' },
@@ -62,6 +65,14 @@ export async function requestBody(
   return body as Record<string, unknown>
 }
 export async function limitedBody(request: Request, limit: number) {
+  try {
+    return Buffer.from(await limitedBytes(request, limit)).toString('utf8')
+  } catch (error) {
+    if (error instanceof PayloadTooLargeError) throw new InvalidInputError()
+    throw error
+  }
+}
+export async function limitedBytes(request: Request, limit: number) {
   const reader = request.body?.getReader()
   if (!reader) throw new InvalidInputError()
   let size = 0
@@ -72,9 +83,9 @@ export async function limitedBody(request: Request, limit: number) {
     size += value.byteLength
     if (size > limit) {
       await reader.cancel()
-      throw new InvalidInputError()
+      throw new PayloadTooLargeError()
     }
     chunks.push(value)
   }
-  return Buffer.concat(chunks).toString('utf8')
+  return Buffer.concat(chunks)
 }

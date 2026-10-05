@@ -12,6 +12,9 @@ export class ForbiddenError extends Error {
 export class InvalidInputError extends Error {
   readonly status = 400
 }
+export class PayloadTooLargeError extends Error {
+  readonly status = 413
+}
 export class ConflictError extends Error {
   readonly status = 409
 }
