@@ -25,7 +25,7 @@ export async function GET(request: NextRequest, context: Context) {
 }
 export async function POST(request: NextRequest, context: Context) {
   return authenticated(request, async (actorId) => {
-    const body = await requestBody(request, 250000)
+    const body = await requestBody(request, 3_000_000)
     if (typeof body.accountId !== 'string' || !Array.isArray(body.rows))
       throw new InvalidInputError()
     const input = {
