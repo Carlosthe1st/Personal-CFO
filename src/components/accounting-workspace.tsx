@@ -9,6 +9,9 @@ import { portugalDate } from '../lib/date'
 import { BudgetPanel } from './budget-panel'
 import { AccountManager } from './account-manager'
 import { ReportPanel } from './report-panel'
+import { StatementPanel } from './statement-panel'
+import { MovementHistory } from './movement-history'
+import { AccountingChat } from './accounting-chat'
 
 type Organization = { id: string; name: string; role: MemberRole }
 type Account = {
@@ -191,6 +194,12 @@ export function AccountingWorkspace({
                   accounts={accounts}
                   onSaved={() => setRevision((value) => value + 1)}
                 />
+                <AccountingChat
+                  key={`chat-${organizationId}`}
+                  organizationId={organizationId}
+                  accounts={accounts}
+                  onSaved={() => setRevision((value) => value + 1)}
+                />
                 <JournalForm
                   key={organizationId}
                   organizationId={organizationId}
@@ -223,6 +232,19 @@ export function AccountingWorkspace({
               </ul>
             </section>
           ))}
+          {organizationId && (
+            <MovementHistory
+              key={`history-${organizationId}`}
+              organizationId={organizationId}
+              accounts={accounts}
+              canEdit={
+                ownOrganizations.find((org) => org.id === organizationId)
+                  ?.role !== 'reader'
+              }
+              revision={revision}
+              onSaved={() => setRevision((value) => value + 1)}
+            />
+          )}
           <BudgetPanel
             key={`budget-${organizationId}`}
             organizationId={organizationId}
@@ -235,6 +257,15 @@ export function AccountingWorkspace({
           <ReportPanel
             key={`reports-${organizationId}`}
             organizationId={organizationId}
+            accounts={accounts}
+          />
+          <StatementPanel
+            key={`statements-${organizationId}`}
+            organizationId={organizationId}
+            role={
+              ownOrganizations.find((org) => org.id === organizationId)?.role ??
+              'reader'
+            }
             accounts={accounts}
           />
         </>

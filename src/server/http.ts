@@ -46,6 +46,7 @@ export async function authenticated(
 }
 export async function requestBody(
   request: NextRequest,
+  limit = 16384,
 ): Promise<Record<string, unknown>> {
   const origin = request.headers.get('origin')
   const host = request.headers.get('host')
@@ -55,7 +56,7 @@ export async function requestBody(
   if (origin !== expectedOrigin) throw new ForbiddenError()
   if (!request.headers.get('content-type')?.startsWith('application/json'))
     throw new InvalidInputError()
-  const body: unknown = JSON.parse(await limitedBody(request, 16384))
+  const body: unknown = JSON.parse(await limitedBody(request, limit))
   if (!body || typeof body !== 'object' || Array.isArray(body))
     throw new InvalidInputError()
   return body as Record<string, unknown>

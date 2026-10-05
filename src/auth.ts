@@ -4,6 +4,7 @@ import Nodemailer from 'next-auth/providers/nodemailer'
 import { DrizzleAdapter } from '@auth/drizzle-adapter'
 import { getDb } from './db/client'
 import { users, authAccounts, sessions, verificationTokens } from './db/schema'
+import { createConfirmationLink } from './server/login-confirmation'
 
 export function authConfigured() {
   return !!(
@@ -27,21 +28,34 @@ export const { auth, handlers, signIn, signOut } = NextAuth(() => {
     }),
     session: { strategy: 'database' },
     providers: [
-      Nodemailer({
-        server: process.env.EMAIL_SERVER!,
-        from: process.env.EMAIL_FROM!,
-        normalizeIdentifier(identifier) {
-          const email = identifier.trim().toLowerCase()
-          if (
-            email.length > 254 ||
-            !/^[a-z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-z0-9]+(?:[.-][a-z0-9]+)*\.[a-z]{2,}$/i.test(
-              email,
+      (() => {
+        const provider = Nodemailer({
+          server: process.env.EMAIL_SERVER!,
+          from: process.env.EMAIL_FROM!,
+          normalizeIdentifier(identifier) {
+            const email = identifier.trim().toLowerCase()
+            if (
+              email.length > 254 ||
+              !/^[a-z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-z0-9]+(?:[.-][a-z0-9]+)*\.[a-z]{2,}$/i.test(
+                email,
+              )
             )
-          )
-            throw new Error('Invalid email')
-          return email
-        },
-      }),
+              throw new Error('Invalid email')
+            return email
+          },
+        })
+        return {
+          ...provider,
+          sendVerificationRequest(
+            params: Parameters<typeof provider.sendVerificationRequest>[0],
+          ) {
+            return provider.sendVerificationRequest({
+              ...params,
+              url: createConfirmationLink(params.url),
+            })
+          },
+        }
+      })(),
     ],
     callbacks: {
       session({ session, user }) {

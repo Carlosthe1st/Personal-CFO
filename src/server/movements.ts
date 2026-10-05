@@ -299,36 +299,32 @@ export async function changeMovement(input: MovementChangeInput) {
       .onConflictDoNothing()
       .returning()
     if (!event) throw new ConflictError()
-    await tx
-      .insert(auditEvents)
-      .values({
-        organizationId: input.organizationId,
+    await tx.insert(auditEvents).values({
+      organizationId: input.organizationId,
+      actorId: input.actorId,
+      entryId: original.journalEntryId,
+      action: saved ? 'movement.corrected' : 'movement.removed',
+      data: {
+        changeId: event.id,
+        reversalEntryId: reversal.id,
+        reason: input.reason,
+        replacementOrganizationId: replacement?.organizationId,
+        replacementMovementId: saved?.id,
+      },
+    })
+    if (saved && replacement)
+      await tx.insert(auditEvents).values({
+        organizationId: replacement.organizationId,
         actorId: input.actorId,
-        entryId: original.journalEntryId,
-        action: saved ? 'movement.corrected' : 'movement.removed',
+        entryId: saved.journalEntryId,
+        action: 'movement.replacement',
         data: {
           changeId: event.id,
-          reversalEntryId: reversal.id,
+          originalOrganizationId: input.organizationId,
+          originalMovementId: original.id,
           reason: input.reason,
-          replacementOrganizationId: replacement?.organizationId,
-          replacementMovementId: saved?.id,
         },
       })
-    if (saved && replacement)
-      await tx
-        .insert(auditEvents)
-        .values({
-          organizationId: replacement.organizationId,
-          actorId: input.actorId,
-          entryId: saved.journalEntryId,
-          action: 'movement.replacement',
-          data: {
-            changeId: event.id,
-            originalOrganizationId: input.organizationId,
-            originalMovementId: original.id,
-            reason: input.reason,
-          },
-        })
     return {
       id: event.id,
       reversalEntryId: reversal.id,

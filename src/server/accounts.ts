@@ -115,14 +115,12 @@ async function change(
         if (!created) throw new ConflictError()
         saved = created
       }
-      await tx
-        .insert(auditEvents)
-        .values({
-          organizationId: input.organizationId,
-          actorId: input.actorId,
-          action: before ? 'account.updated' : 'account.created',
-          data: { before, after: saved },
-        })
+      await tx.insert(auditEvents).values({
+        organizationId: input.organizationId,
+        actorId: input.actorId,
+        action: before ? 'account.updated' : 'account.created',
+        data: { before, after: saved },
+      })
       return saved
     })
   } catch (error) {

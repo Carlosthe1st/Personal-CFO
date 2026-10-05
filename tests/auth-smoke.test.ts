@@ -74,10 +74,28 @@ describe.skipIf(!process.env.ACCOUNTING_TEST_BASE_URL)(
             String.fromCharCode(parseInt(hex, 16)),
           )
         const link = decoded.match(
-          /https?:\/\/[^\s<>]+\/api\/auth\/callback\/nodemailer\?[^\s<>]+/,
+          /https?:\/\/[^\s<>]+\/auth\/confirm\?c=[^\s<>]+/,
         )?.[0]
         expect(link).toBeTruthy()
-        expect((await request(link!)).status).toBe(302)
+        expect(new URL(link!).origin).toBe(new URL(base).origin)
+        expect(new URL(link!).searchParams.get('c')).toMatch(
+          /^[A-Za-z0-9_-]{40,4096}$/,
+        )
+        expect((await request(link!)).status).toBe(200)
+        expect(await (await request('/api/auth/session')).json()).toBeNull()
+        const confirmed = await request('/api/auth/confirm', {
+          method: 'POST',
+          headers: {
+            'content-type': 'application/x-www-form-urlencoded',
+            origin: new URL(base).origin,
+          },
+          body: new URLSearchParams({
+            c: new URL(link!).searchParams.get('c')!,
+          }),
+        })
+        expect(confirmed.status).toBe(303)
+        const callback = await request(confirmed.headers.get('location')!)
+        expect(callback.status, confirmed.headers.get('location')!).toBe(302)
         const session = await (await request('/api/auth/session')).json()
         expect(session.user.id).toMatch(/^[0-9a-f-]{36}$/)
         expect(await (await request('/api/organizations')).json()).toEqual([])

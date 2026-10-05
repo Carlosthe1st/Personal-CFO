@@ -282,6 +282,76 @@ export const movements = pgTable(
   ],
 )
 
+export const statementImports = pgTable(
+  'statement_imports',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    organizationId: uuid('organization_id')
+      .notNull()
+      .references(() => organizations.id),
+    accountId: uuid('account_id').notNull(),
+    actorId: uuid('actor_id')
+      .notNull()
+      .references(() => users.id),
+    idempotencyKey: text('idempotency_key').notNull(),
+    requestHash: text('request_hash').notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [
+    unique('statement_import_org_id').on(t.organizationId, t.id),
+    unique('statement_import_operation').on(t.organizationId, t.idempotencyKey),
+    foreignKey({
+      columns: [t.organizationId, t.accountId],
+      foreignColumns: [accounts.organizationId, accounts.id],
+    }),
+  ],
+)
+
+export const statementLines = pgTable(
+  'statement_lines',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    organizationId: uuid('organization_id').notNull(),
+    importId: uuid('import_id').notNull(),
+    accountId: uuid('account_id').notNull(),
+    date: date('date').notNull(),
+    description: text('description').notNull(),
+    amountCents: bigint('amount_cents', { mode: 'number' }).notNull(),
+    fingerprint: text('fingerprint').notNull(),
+    matchedEntryId: uuid('matched_entry_id'),
+    version: integer('version').notNull().default(0),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [
+    foreignKey({
+      columns: [t.organizationId, t.importId],
+      foreignColumns: [statementImports.organizationId, statementImports.id],
+    }),
+    foreignKey({
+      columns: [t.organizationId, t.accountId],
+      foreignColumns: [accounts.organizationId, accounts.id],
+    }),
+    foreignKey({
+      columns: [t.organizationId, t.matchedEntryId],
+      foreignColumns: [journalEntries.organizationId, journalEntries.id],
+    }),
+    unique('statement_match_once').on(t.accountId, t.matchedEntryId),
+    index('statement_duplicate_lookup').on(
+      t.organizationId,
+      t.accountId,
+      t.fingerprint,
+    ),
+    check(
+      'statement_nonzero_safe',
+      sql`${t.amountCents} between -9007199254740991 and 9007199254740991 and ${t.amountCents} <> 0`,
+    ),
+  ],
+)
+
 export const authAccounts = pgTable(
   'auth_accounts',
   {
