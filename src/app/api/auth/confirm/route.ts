@@ -1,4 +1,5 @@
-import type { NextRequest } from 'next/server'
+import { NextRequest } from 'next/server'
+import { handlers } from '../../../../auth'
 import { resolveConfirmationChallenge } from '../../../../server/login-confirmation'
 
 export async function POST(request: NextRequest) {
@@ -26,10 +27,26 @@ export async function POST(request: NextRequest) {
     return new Response('Pedido inválido.', { status: 400 })
   try {
     const challenge = new URLSearchParams(body).get('c') ?? ''
-    return Response.redirect(
-      resolveConfirmationChallenge(challenge, origin),
-      303,
+    const callback = resolveConfirmationChallenge(challenge, origin)
+    const verified = await handlers.GET(
+      new NextRequest(callback, { headers: request.headers }),
     )
+    const destination = verified.headers.get('location')
+    if (
+      verified.status !== 302 ||
+      !destination ||
+      new URL(destination, origin).origin !== origin ||
+      new URL(destination, origin).pathname !== '/contabilidade'
+    )
+      throw new Error('Invalid confirmation')
+    const response = new Response(null, {
+      status: 303,
+      headers: { Location: new URL('/contabilidade', origin).toString() },
+    })
+    response.headers.set('Cache-Control', 'no-store')
+    for (const cookie of verified.headers.getSetCookie())
+      response.headers.append('Set-Cookie', cookie)
+    return response
   } catch {
     return Response.redirect(
       new URL('/api/auth/signin?error=Verification', origin),

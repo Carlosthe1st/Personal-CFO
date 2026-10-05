@@ -94,8 +94,10 @@ describe.skipIf(!process.env.ACCOUNTING_TEST_BASE_URL)(
           }),
         })
         expect(confirmed.status).toBe(303)
-        const callback = await request(confirmed.headers.get('location')!)
-        expect(callback.status, confirmed.headers.get('location')!).toBe(302)
+        expect(new URL(confirmed.headers.get('location')!).pathname).toBe(
+          '/contabilidade',
+        )
+        expect(confirmed.headers.get('location')).not.toContain('token=')
         const session = await (await request('/api/auth/session')).json()
         expect(session.user.id).toMatch(/^[0-9a-f-]{36}$/)
         expect(await (await request('/api/organizations')).json()).toEqual([])
