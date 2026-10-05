@@ -1,7 +1,19 @@
 'use client'
 
-import { useEffect, useState, useRef, type FormEvent } from 'react'
-import Link from 'next/link'
+import { useEffect, useMemo, useState, useRef, type FormEvent } from 'react'
+import {
+  ArrowLeftRight,
+  BookOpenText,
+  ChartNoAxesCombined,
+  ChartPie,
+  ChevronDown,
+  FileSpreadsheet,
+  LayoutDashboard,
+  Menu,
+  MessageSquareText,
+  Settings2,
+  X,
+} from 'lucide-react'
 import type { MemberRole, AccountKind } from '../db/schema'
 import type { JournalEntryView } from '../server/journal'
 import { formatEuro } from '../lib/finance'
@@ -12,8 +24,17 @@ import { ReportPanel } from './report-panel'
 import { StatementPanel } from './statement-panel'
 import { MovementHistory } from './movement-history'
 import { AccountingChat } from './accounting-chat'
+import { emailSignOut } from '../app/login/actions'
 
 type Organization = { id: string; name: string; role: MemberRole }
+type View =
+  | 'overview'
+  | 'movements'
+  | 'assistant'
+  | 'budget'
+  | 'journal'
+  | 'reports'
+  | 'management'
 type Account = {
   id: string
   code: string
@@ -48,6 +69,59 @@ export function AccountingWorkspace({
   const [name, setName] = useState('')
   const [creating, setCreating] = useState(false)
   const [loadedOrganizationId, setLoadedOrganizationId] = useState('')
+  const [dataError, setDataError] = useState(false)
+  const [view, setView] = useState<View>('overview')
+  const [mobileMenu, setMobileMenu] = useState(false)
+  const sidebarRef = useRef<HTMLElement>(null)
+  const menuToggleRef = useRef<HTMLButtonElement>(null)
+  const selectedOrganization = ownOrganizations.find(
+    (organization) => organization.id === organizationId,
+  )
+  const canManage =
+    selectedOrganization?.role === 'owner' ||
+    selectedOrganization?.role === 'admin'
+  const canWrite = !!selectedOrganization && selectedOrganization.role !== 'reader'
+  const summary = useMemo(() => {
+    const byId = new Map(accounts.map((account) => [account.id, account]))
+    const month = portugalDate(new Date()).slice(0, 7)
+    let balance = 0
+    let income = 0
+    let expenses = 0
+    const categories = new Map<string, number>()
+    for (const entry of journal) {
+      for (const line of entry.lines) {
+        const account = byId.get(line.accountId)
+        if (!account) continue
+        const debit = line.side === 'debit' ? line.amountCents : -line.amountCents
+        if (account.kind === 'cash' || account.kind === 'bank') balance += debit
+        if (!entry.date.startsWith(month)) continue
+        if (account.kind === 'income') income -= debit
+        if (account.kind === 'expense') {
+          expenses += debit
+          categories.set(account.name, (categories.get(account.name) ?? 0) + debit)
+        }
+      }
+    }
+    return {
+      balance,
+      income,
+      expenses,
+      categories: [...categories].sort((a, b) => b[1] - a[1]),
+    }
+  }, [accounts, journal])
+  const navigation = [
+    { id: 'overview', label: 'Visão geral', icon: LayoutDashboard },
+    { id: 'movements', label: 'Movimentos', icon: ArrowLeftRight },
+    { id: 'assistant', label: 'Falar com o CFO', icon: MessageSquareText },
+    { id: 'budget', label: 'Orçamentos', icon: ChartPie },
+    { id: 'journal', label: 'Diário', icon: BookOpenText },
+    { id: 'reports', label: 'Relatórios', icon: FileSpreadsheet },
+    { id: 'management', label: 'Administração', icon: Settings2 },
+  ] as const
+  function navigate(next: View) {
+    setView(next)
+    setMobileMenu(false)
+  }
   async function create(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     if (creating) return
@@ -77,6 +151,33 @@ export function AccountingWorkspace({
     }
   }
   useEffect(() => {
+    if (!mobileMenu) return
+    const previousOverflow = document.body.style.overflow
+    const menuToggle = menuToggleRef.current
+    document.body.style.overflow = 'hidden'
+    sidebarRef.current?.querySelector<HTMLButtonElement>('.mobile-close')?.focus()
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.key === 'Escape') setMobileMenu(false)
+      if (event.key !== 'Tab' || !sidebarRef.current) return
+      const focusable = [...sidebarRef.current.querySelectorAll<HTMLElement>('button:not([disabled]), a[href], select:not([disabled])')]
+      const first = focusable[0]
+      const last = focusable.at(-1)
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault()
+        last?.focus()
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault()
+        first?.focus()
+      }
+    }
+    document.addEventListener('keydown', onKeyDown)
+    return () => {
+      document.removeEventListener('keydown', onKeyDown)
+      document.body.style.overflow = previousOverflow
+      menuToggle?.focus()
+    }
+  }, [mobileMenu])
+  useEffect(() => {
     const controller = new AbortController()
     if (organizationId) {
       queueMicrotask(() => {
@@ -98,6 +199,7 @@ export function AccountingWorkspace({
             setJournal(nextJournal)
             setLoadedOrganizationId(organizationId)
             setError('')
+            setDataError(false)
             setLoading(false)
           }
         })
@@ -106,6 +208,7 @@ export function AccountingWorkspace({
             setAccounts([])
             setJournal([])
             setLoadedOrganizationId(organizationId)
+            setDataError(true)
             setError(
               cause instanceof Error ? cause.message : 'Serviço indisponível.',
             )
@@ -119,158 +222,341 @@ export function AccountingWorkspace({
     return () => controller.abort()
   }, [organizationId, revision])
   return (
-    <main className="accounting-workspace">
-      <h1>Contabilidade</h1>
-      <p>Área autenticada em desenvolvimento. Usa apenas dados fictícios.</p>
-      <p>
-        <Link href="/">Voltar à demonstração</Link> ·{' '}
-        <Link href="/api/auth/signout" prefetch={false}>
-          Terminar sessão
-        </Link>
-      </p>
-      <label>
-        Organização{' '}
-        <select
-          value={organizationId}
-          onChange={(event) => setOrganizationId(event.target.value)}
-        >
-          {ownOrganizations.map((org) => (
-            <option key={org.id} value={org.id}>
-              {org.name}
-            </option>
-          ))}
-        </select>
-      </label>
-      <form onSubmit={create}>
-        <label>
-          Nome da organização{' '}
-          <input
-            required
-            maxLength={120}
-            value={name}
-            disabled={creating}
-            onChange={(event) => setName(event.target.value)}
-          />
-        </label>
-        <button type="submit" disabled={creating}>
-          {creating ? 'A criar…' : 'Criar organização'}
-        </button>
-      </form>
-      {error && <p role="alert">{error}</p>}
-      {organizationId &&
-        ['owner', 'admin'].includes(
-          ownOrganizations.find((org) => org.id === organizationId)?.role ?? '',
-        ) && (
-          <MemberForm
-            key={`members-${organizationId}`}
-            organizationId={organizationId}
-            owner={
-              ownOrganizations.find((org) => org.id === organizationId)
-                ?.role === 'owner'
-            }
-          />
-        )}
-      {loading || loadedOrganizationId !== organizationId ? (
-        <p role="status">A consultar o diário…</p>
-      ) : (
-        <>
-          {['owner', 'admin'].includes(
-            ownOrganizations.find((org) => org.id === organizationId)?.role ??
-              '',
-          ) && (
-            <AccountManager
-              organizationId={organizationId}
-              accounts={accounts}
-              onSaved={() => setRevision((value) => value + 1)}
-            />
-          )}
-          {ownOrganizations.find((org) => org.id === organizationId)?.role !==
-            'reader' &&
-            organizationId && (
-              <>
-                <MovementForm
-                  key={`movement-${organizationId}`}
-                  organizationId={organizationId}
-                  accounts={accounts}
-                  onSaved={() => setRevision((value) => value + 1)}
-                />
-                <AccountingChat
-                  key={`chat-${organizationId}`}
-                  organizationId={organizationId}
-                  accounts={accounts}
-                  onSaved={() => setRevision((value) => value + 1)}
-                />
-                <JournalForm
-                  key={organizationId}
-                  organizationId={organizationId}
-                  accounts={accounts}
-                  onSaved={() => setRevision((value) => value + 1)}
-                />
-              </>
-            )}
-          <h2>Diário confirmado</h2>
+    <div className="app-frame accounting-frame">
+      {mobileMenu && <button type="button" className="accounting-backdrop" aria-label="Fechar menu" onClick={() => setMobileMenu(false)} />}
+      <aside ref={sidebarRef} className={`sidebar ${mobileMenu ? 'sidebar-open' : ''}`} role={mobileMenu ? 'dialog' : undefined} aria-modal={mobileMenu ? true : undefined} aria-label={mobileMenu ? 'Menu principal' : undefined}>
+        <div className="brand">
+          <div className="brand-logo">
+            <ChartNoAxesCombined size={23} strokeWidth={2.3} />
+          </div>
+          <div>
+            <strong>
+              personal<span>cfo</span>
+            </strong>
+            <small>FINANÇAS COM CLAREZA</small>
+          </div>
           <button
             type="button"
-            onClick={() => setRevision((value) => value + 1)}
+            className="mobile-close"
+            onClick={() => setMobileMenu(false)}
+            aria-label="Fechar menu"
           >
-            Atualizar diário
+            <X size={20} />
           </button>
-          {journal.length === 0 && <p>Sem lançamentos confirmados.</p>}
-          {journal.map((entry) => (
-            <section key={entry.id}>
-              <h3>{entry.description}</h3>
-              <p>{entry.date}</p>
-              <ul>
-                {entry.lines.map((line, index) => (
-                  <li key={index}>
-                    {line.side === 'debit' ? 'Débito' : 'Crédito'} ·{' '}
-                    {accounts.find((account) => account.id === line.accountId)
-                      ?.name ?? 'Conta'}{' '}
-                    · {formatEuro(line.amountCents / 100)}
-                  </li>
-                ))}
-              </ul>
-            </section>
-          ))}
-          {organizationId && (
-            <MovementHistory
-              key={`history-${organizationId}`}
-              organizationId={organizationId}
-              accounts={accounts}
-              canEdit={
-                ownOrganizations.find((org) => org.id === organizationId)
-                  ?.role !== 'reader'
-              }
-              revision={revision}
-              onSaved={() => setRevision((value) => value + 1)}
-            />
+        </div>
+        <div className="sidebar-label">ESPAÇO DE TRABALHO</div>
+        <label className="organization-select">
+          <span className="org-monogram">
+            {selectedOrganization?.name.slice(0, 1) ?? '+'}
+          </span>
+          <span>
+            <small>Organização</small>
+            <select
+              aria-label="Organização"
+              value={organizationId}
+              onChange={(event) => {
+                setOrganizationId(event.target.value)
+                navigate('overview')
+              }}
+            >
+              {ownOrganizations.map((organization) => (
+                <option key={organization.id} value={organization.id}>
+                  {organization.name}
+                </option>
+              ))}
+            </select>
+          </span>
+          <ChevronDown size={15} />
+        </label>
+        <div className="sidebar-label nav-label">MENU PRINCIPAL</div>
+        <nav className="side-nav" aria-label="Navegação principal">
+          {navigation
+            .filter(
+              ({ id }) =>
+                (id !== 'management' || canManage || !organizationId) &&
+                (id !== 'assistant' || canWrite),
+            )
+            .map(({ id, label, icon: Icon }) => (
+              <button
+                key={id}
+                type="button"
+                className={view === id ? 'active' : ''}
+                aria-current={view === id ? 'page' : undefined}
+                onClick={() => navigate(id)}
+              >
+                <Icon size={18} /> {label}
+              </button>
+            ))}
+        </nav>
+        <div className="sidebar-bottom">
+          <div className="sidebar-profile">
+            <div className="profile-avatar">
+              {selectedOrganization?.name.slice(0, 1) ?? 'P'}
+            </div>
+            <span>
+              <strong>{selectedOrganization?.name ?? 'Personal CFO'}</strong>
+              <small>
+                {selectedOrganization?.role === 'owner'
+                  ? 'Proprietário'
+                  : selectedOrganization?.role === 'admin'
+                    ? 'Administrador'
+                    : selectedOrganization?.role === 'editor'
+                      ? 'Editor'
+                      : 'Leitor'}
+              </small>
+            </span>
+          </div>
+          <form action={emailSignOut} className="accounting-signout">
+            <button type="submit">Terminar sessão</button>
+          </form>
+        </div>
+      </aside>
+      <main className="main-area accounting-workspace">
+        <header className="topbar">
+          <div className="top-left">
+            <button
+              ref={menuToggleRef}
+              type="button"
+              className="menu-toggle"
+              onClick={() => setMobileMenu(true)}
+              aria-label="Abrir menu"
+              aria-expanded={mobileMenu}
+            >
+              <Menu size={21} />
+            </button>
+            <span>O teu espaço financeiro</span>
+            <span className="top-divider">/</span>
+            <strong>{navigation.find((item) => item.id === view)?.label}</strong>
+          </div>
+          <div className="top-actions">
+            <span className="accounting-live">DADOS DA ORGANIZAÇÃO</span>
+          </div>
+        </header>
+        <div className="content-wrap accounting-content">
+          {error && <p role="alert">{error}</p>}
+          {!organizationId ? (
+            <div className="accounting-empty">
+              <h1>Cria o teu espaço financeiro</h1>
+              <p>Começa por dar um nome à organização que vais gerir.</p>
+              <form onSubmit={create}>
+                <label>
+                  Nome da organização
+                  <input
+                    required
+                    maxLength={120}
+                    value={name}
+                    disabled={creating}
+                    onChange={(event) => setName(event.target.value)}
+                  />
+                </label>
+                <button type="submit" disabled={creating}>
+                  {creating ? 'A criar…' : 'Criar organização'}
+                </button>
+              </form>
+            </div>
+          ) : loading || loadedOrganizationId !== organizationId ? (
+            <p role="status" className="accounting-loading">
+              A preparar o espaço financeiro…
+            </p>
+          ) : dataError ? (
+            <div className="accounting-empty">
+              <h1>Não foi possível carregar os dados</h1>
+              <p>Não mostramos valores até confirmar os dados da organização.</p>
+              <button type="button" onClick={() => setRevision((value) => value + 1)}>Tentar novamente</button>
+            </div>
+          ) : (
+            <>
+              {view === 'overview' && (
+                <>
+                  <div className="greeting">
+                    <div>
+                      <h1>Visão geral</h1>
+                      <p>O essencial de {selectedOrganization?.name}, num só lugar.</p>
+                    </div>
+                  </div>
+                  <div className="hero-card accounting-hero">
+                    <div className="hero-copy">
+                      <span>O TEU CENTRO FINANCEIRO</span>
+                      <h2>Clareza para agir.</h2>
+                      <p>Regista, acompanha e revê os movimentos da tua organização.</p>
+                      <button type="button" onClick={() => navigate('movements')}>
+                        Novo movimento <ArrowLeftRight size={18} />
+                      </button>
+                    </div>
+                    <div className="accounting-hero-total">
+                      <small>Saldo disponível</small>
+                      <strong>{formatEuro(summary.balance / 100)}</strong>
+                    </div>
+                  </div>
+                  <div className="accounting-overview-grid">
+                    <div><span>Saldo disponível</span><strong>{formatEuro(summary.balance / 100)}</strong><small>Caixa e bancos</small></div>
+                    <div><span>Entradas este mês</span><strong>{formatEuro(summary.income / 100)}</strong><small>Receitas confirmadas</small></div>
+                    <div><span>Saídas este mês</span><strong>{formatEuro(summary.expenses / 100)}</strong><small>Despesas confirmadas</small></div>
+                    <div><span>Resultado este mês</span><strong>{formatEuro((summary.income - summary.expenses) / 100)}</strong><small>Entradas menos saídas</small></div>
+                  </div>
+                  <div className="accounting-insights-grid">
+                  <section className="accounting-recent accounting-categories">
+                    <div className="section-heading"><h2>Despesas por categoria</h2><button type="button" onClick={() => navigate('reports')}>Ver relatórios</button></div>
+                    {summary.categories.length === 0 ? <p>Sem despesas confirmadas este mês.</p> : (
+                      <ul>{summary.categories.slice(0, 5).map(([category, cents]) => <li key={category}><span>{category}</span><strong>{formatEuro(cents / 100)}</strong></li>)}</ul>
+                    )}
+                  </section>
+                  <section className="accounting-recent">
+                    <div className="section-heading">
+                      <h2>Atividade recente</h2>
+                      <button type="button" onClick={() => navigate('journal')}>
+                        Ver diário
+                      </button>
+                    </div>
+                    {journal.length === 0 ? (
+                      <p>Ainda não existem lançamentos confirmados.</p>
+                    ) : (
+                      <ul>
+                        {journal.slice(0, 5).map((entry) => (
+                          <li key={entry.id}>
+                            <span>{entry.description}</span>
+                            <time>{entry.date}</time>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </section>
+                  </div>
+                </>
+              )}
+              {view === 'movements' && (
+                <div className="accounting-panel">
+                  <h1>Movimentos</h1>
+                  <p>Regista entradas e saídas e acompanha as alterações.</p>
+                  {canWrite && (
+                    <MovementForm
+                      key={`movement-${organizationId}`}
+                      organizationId={organizationId}
+                      accounts={accounts}
+                      onSaved={() => setRevision((value) => value + 1)}
+                    />
+                  )}
+                  <MovementHistory
+                    key={`history-${organizationId}`}
+                    organizationId={organizationId}
+                    accounts={accounts}
+                    canEdit={canWrite}
+                    revision={revision}
+                    onSaved={() => setRevision((value) => value + 1)}
+                  />
+                  <StatementPanel
+                    key={`statements-${organizationId}`}
+                    organizationId={organizationId}
+                    role={selectedOrganization?.role ?? 'reader'}
+                    accounts={accounts}
+                  />
+                </div>
+              )}
+              {view === 'assistant' && canWrite && (
+                <div className="accounting-panel">
+                  <h1>Falar com o CFO</h1>
+                  <AccountingChat
+                    key={`chat-${organizationId}`}
+                    organizationId={organizationId}
+                    accounts={accounts}
+                    onSaved={() => setRevision((value) => value + 1)}
+                  />
+                </div>
+              )}
+              {view === 'budget' && (
+                <div className="accounting-panel">
+                  <h1>Orçamentos</h1>
+                  <BudgetPanel
+                    key={`budget-${organizationId}`}
+                    organizationId={organizationId}
+                    role={selectedOrganization?.role ?? 'reader'}
+                    accounts={accounts}
+                  />
+                </div>
+              )}
+              {view === 'journal' && (
+                <div className="accounting-panel">
+                  <h1>Diário</h1>
+                  {canWrite && (
+                    <JournalForm
+                      key={organizationId}
+                      organizationId={organizationId}
+                      accounts={accounts}
+                      onSaved={() => setRevision((value) => value + 1)}
+                    />
+                  )}
+                  <section>
+                    <div className="section-heading">
+                      <h2>Diário confirmado</h2>
+                      <button type="button" onClick={() => setRevision((value) => value + 1)}>
+                        Atualizar diário
+                      </button>
+                    </div>
+                    {journal.length === 0 && <p>Sem lançamentos confirmados.</p>}
+                    {journal.map((entry) => (
+                      <div className="accounting-journal-entry" key={entry.id}>
+                        <h3>{entry.description}</h3>
+                        <time>{entry.date}</time>
+                        <ul>
+                          {entry.lines.map((line, index) => (
+                            <li key={index}>
+                              {line.side === 'debit' ? 'Débito' : 'Crédito'} ·{' '}
+                              {accounts.find((account) => account.id === line.accountId)?.name ?? 'Conta'}{' '}
+                              · {formatEuro(line.amountCents / 100)}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    ))}
+                  </section>
+                </div>
+              )}
+              {view === 'reports' && (
+                <div className="accounting-panel">
+                  <h1>Relatórios</h1>
+                  <ReportPanel
+                    key={`reports-${organizationId}`}
+                    organizationId={organizationId}
+                    accounts={accounts}
+                  />
+                </div>
+              )}
+              {view === 'management' && canManage && (
+                <div className="accounting-panel">
+                  <h1>Administração</h1>
+                  <form onSubmit={create}>
+                    <h2>Nova organização</h2>
+                    <label>
+                      Nome da organização
+                      <input
+                        required
+                        maxLength={120}
+                        value={name}
+                        disabled={creating}
+                        onChange={(event) => setName(event.target.value)}
+                      />
+                    </label>
+                    <button type="submit" disabled={creating}>
+                      {creating ? 'A criar…' : 'Criar organização'}
+                    </button>
+                  </form>
+                  <AccountManager
+                    organizationId={organizationId}
+                    accounts={accounts}
+                    onSaved={() => setRevision((value) => value + 1)}
+                  />
+                  <MemberForm
+                    key={`members-${organizationId}`}
+                    organizationId={organizationId}
+                    owner={selectedOrganization?.role === 'owner'}
+                  />
+                </div>
+              )}
+            </>
           )}
-          <BudgetPanel
-            key={`budget-${organizationId}`}
-            organizationId={organizationId}
-            role={
-              ownOrganizations.find((org) => org.id === organizationId)?.role ??
-              'reader'
-            }
-            accounts={accounts}
-          />
-          <ReportPanel
-            key={`reports-${organizationId}`}
-            organizationId={organizationId}
-            accounts={accounts}
-          />
-          <StatementPanel
-            key={`statements-${organizationId}`}
-            organizationId={organizationId}
-            role={
-              ownOrganizations.find((org) => org.id === organizationId)?.role ??
-              'reader'
-            }
-            accounts={accounts}
-          />
-        </>
-      )}
-    </main>
+        </div>
+      </main>
+    </div>
   )
 }
 

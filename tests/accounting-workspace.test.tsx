@@ -25,6 +25,57 @@ const entry = {
   events: [{ action: 'journal.posted' }],
 }
 describe('accounting workspace', () => {
+  it('keeps tasks in the same navigation flow instead of showing every form at once', async () => {
+    const user = userEvent.setup()
+    vi.stubGlobal('fetch', async (url: string) =>
+      Response.json(url.endsWith('/accounts') ? [] : []),
+    )
+    render(
+      <AccountingWorkspace
+        organizations={[{ ...organizations[0], role: 'editor' }]}
+      />,
+    )
+    expect(
+      screen.getByRole('navigation', { name: 'Navegação principal' }),
+    ).toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: 'Novo movimento' })).toBeNull()
+    await user.click(screen.getByRole('button', { name: 'Movimentos' }))
+    expect(
+      await screen.findByRole('heading', { name: 'Novo movimento' }),
+    ).toBeVisible()
+  })
+  it('shows real financial totals and categories in the overview', async () => {
+    vi.stubGlobal('fetch', async (url: string) => Response.json(
+      url.endsWith('/accounts')
+        ? [
+            { id: 'cash', code: 'CAIXA', name: 'Caixa', kind: 'cash', active: true },
+            { id: 'expense', code: 'DESPESA', name: 'Despesas', kind: 'expense', active: true },
+          ]
+        : [entry],
+    ))
+    render(<AccountingWorkspace organizations={organizations} />)
+    expect(await screen.findAllByText('Saldo disponível')).toHaveLength(2)
+    expect(screen.getByText('Saídas este mês')).toBeInTheDocument()
+    expect(screen.getByText('Despesas')).toBeInTheDocument()
+  })
+  it('never presents failed data loads as an empty financial history', async () => {
+    vi.stubGlobal('fetch', async () => Response.json({ error: 'offline' }, { status: 503 }))
+    render(<AccountingWorkspace organizations={organizations} />)
+    expect(await screen.findByRole('alert')).toBeInTheDocument()
+    expect(screen.queryByText('Ainda não existem lançamentos confirmados.')).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Tentar novamente' })).toBeInTheDocument()
+  })
+  it('closes the mobile menu with Escape and restores focus', async () => {
+    const user = userEvent.setup()
+    vi.stubGlobal('fetch', async () => Response.json([]))
+    render(<AccountingWorkspace organizations={organizations} />)
+    const toggle = screen.getByRole('button', { name: 'Abrir menu' })
+    await user.click(toggle)
+    expect(screen.getByRole('dialog', { name: 'Menu principal' })).toBeInTheDocument()
+    await user.keyboard('{Escape}')
+    expect(screen.queryByRole('dialog', { name: 'Menu principal' })).not.toBeInTheDocument()
+    expect(toggle).toHaveFocus()
+  })
   it('records a simple expense through the movements API', async () => {
     const user = userEvent.setup()
     let payload: Record<string, unknown> | undefined
@@ -59,6 +110,7 @@ describe('accounting workspace', () => {
         organizations={[{ ...organizations[0], role: 'editor' }]}
       />,
     )
+    await user.click(screen.getByRole('button', { name: 'Movimentos' }))
     await user.selectOptions(
       await screen.findByLabelText('Tipo de movimento'),
       'expense',
@@ -101,6 +153,7 @@ describe('accounting workspace', () => {
         organizations={[{ ...organizations[0], role: 'owner' }]}
       />,
     )
+    await user.click(screen.getByRole('button', { name: 'Administração' }))
     await user.type(
       await screen.findByLabelText('Email do membro'),
       'member@example.test',
@@ -112,6 +165,7 @@ describe('accounting workspace', () => {
     ])
   })
   it('lets a reader consult the journal without a submit control', async () => {
+    const user = userEvent.setup()
     vi.stubGlobal('fetch', async (url: string) =>
       Response.json(
         url.endsWith('/accounts')
@@ -128,6 +182,7 @@ describe('accounting workspace', () => {
       ),
     )
     render(<AccountingWorkspace organizations={organizations} />)
+    await user.click(screen.getByRole('button', { name: 'Diário' }))
     expect(await screen.findByText('Combustível')).toBeInTheDocument()
     expect(
       screen.queryByRole('button', { name: 'Confirmar lançamento' }),
@@ -173,6 +228,7 @@ describe('accounting workspace', () => {
         organizations={[{ ...organizations[0], role: 'editor' }]}
       />,
     )
+    await user.click(screen.getByRole('button', { name: 'Diário' }))
     const submit = await screen.findByRole('button', {
       name: 'Confirmar lançamento',
     })
@@ -202,7 +258,7 @@ describe('accounting workspace', () => {
       screen.getAllByRole('heading', { name: 'Combustível' }),
     ).toHaveLength(1)
   })
-  it('creates the first organization without replacing the demo', async () => {
+  it('creates the first organization and opens its private workspace', async () => {
     const user = userEvent.setup()
     vi.stubGlobal('fetch', async (url: string, init?: RequestInit) => {
       if (url === '/api/organizations' && init?.method === 'POST')
@@ -221,8 +277,6 @@ describe('accounting workspace', () => {
     expect(
       await screen.findByRole('option', { name: 'Novo atelier' }),
     ).toBeInTheDocument()
-    expect(
-      screen.getByRole('link', { name: 'Voltar à demonstração' }),
-    ).toHaveAttribute('href', '/')
+    expect(screen.getByRole('navigation', { name: 'Navegação principal' })).toBeInTheDocument()
   })
 })

@@ -66,7 +66,12 @@ describe.skipIf(!process.env.ACCOUNTING_TEST_BASE_URL)(
         expect(protectedPage.status).toBe(307)
         expect(
           new URL(protectedPage.headers.get('location')!, base).pathname,
-        ).toBe('/api/auth/signin')
+        ).toBe('/login')
+        const login = await request('/login')
+        expect(login.status).toBe(200)
+        const loginHtml = await login.text()
+        expect(loginHtml).toContain('Entrar no Personal CFO')
+        expect(loginHtml).toContain('name="email"')
         const csrf = await (await request('/api/auth/csrf')).json()
         const signin = await request('/api/auth/signin/nodemailer', {
           method: 'POST',
@@ -78,6 +83,9 @@ describe.skipIf(!process.env.ACCOUNTING_TEST_BASE_URL)(
           }),
         })
         expect(signin.status).toBe(302)
+        const verifyRequest = await request(signin.headers.get('location')!)
+        expect(verifyRequest.status).toBe(302)
+        expect(new URL(verifyRequest.headers.get('location')!, base).pathname).toBe('/login/check-email')
         const decoded = message
           .replace(/=\r\n/g, '')
           .replace(/=([0-9a-f]{2})/gi, (_, hex) =>
