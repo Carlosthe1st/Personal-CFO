@@ -57,6 +57,16 @@ describe.skipIf(!process.env.ACCOUNTING_TEST_BASE_URL)(
         return response
       }
       try {
+        const home = await request('/')
+        expect(home.status).toBe(307)
+        expect(new URL(home.headers.get('location')!, base).pathname).toBe(
+          '/contabilidade',
+        )
+        const protectedPage = await request('/contabilidade')
+        expect(protectedPage.status).toBe(307)
+        expect(
+          new URL(protectedPage.headers.get('location')!, base).pathname,
+        ).toBe('/api/auth/signin')
         const csrf = await (await request('/api/auth/csrf')).json()
         const signin = await request('/api/auth/signin/nodemailer', {
           method: 'POST',
