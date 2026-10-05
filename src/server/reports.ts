@@ -12,6 +12,19 @@ function validDate(value: string) {
     date.toISOString().slice(0, 10) === value
   )
 }
+export function assertReportPeriod(
+  from: string,
+  to: string,
+  accountId?: string,
+) {
+  if (
+    !validDate(from) ||
+    !validDate(to) ||
+    from > to ||
+    (accountId && !uuidPattern.test(accountId))
+  )
+    throw new InvalidInputError()
+}
 export async function getReports(
   organizationId: string,
   actorId: string,
@@ -25,13 +38,7 @@ export async function getReports(
     'editor',
     'reader',
   ])
-  if (
-    !validDate(from) ||
-    !validDate(to) ||
-    from > to ||
-    (accountId && !uuidPattern.test(accountId))
-  )
-    throw new InvalidInputError()
+  assertReportPeriod(from, to, accountId)
   return getDb().transaction(
     async (tx) => {
       const balances = await tx

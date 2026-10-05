@@ -24,6 +24,12 @@ export function ReportPanel({
   const [report, setReport] = useState<Report | null>(null)
   const [pending, setPending] = useState(false)
   const [error, setError] = useState('')
+  const validPeriod =
+    /^\d{4}-\d{2}-\d{2}$/.test(from) &&
+    /^\d{4}-\d{2}-\d{2}$/.test(to) &&
+    from <= to
+  const exportUrl = (format: 'csv' | 'pdf') =>
+    `/api/organizations/${organizationId}/reports/export?${new URLSearchParams({ from, to, accountId, format })}`
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     if (pending) return
@@ -86,6 +92,13 @@ export function ReportPanel({
           <button type="submit">Consultar relatórios</button>
         </fieldset>
       </form>
+      {validPeriod && (
+        <p>
+          <a href={exportUrl('csv')}>Descarregar CSV</a>
+          {' · '}
+          <a href={exportUrl('pdf')}>Descarregar PDF</a>
+        </p>
+      )}
       {error && <p role="alert">{error}</p>}
       {report && (
         <>
