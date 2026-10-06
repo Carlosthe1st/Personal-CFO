@@ -174,6 +174,24 @@ function makeCsv(rows: ExportRow[]) {
   )
 }
 
+export function summarizeExportRows(
+  rows: Pick<ExportRow, 'category' | 'side' | 'amountCents'>[],
+) {
+  const categories = new Map<string, { debit: bigint; credit: bigint }>()
+  let unclassifiedCents = BigInt(0)
+  for (const row of rows) {
+    const current = categories.get(row.category) ?? {
+      debit: BigInt(0),
+      credit: BigInt(0),
+    }
+    current[row.side] += BigInt(row.amountCents)
+    categories.set(row.category, current)
+    if (row.category === 'other')
+      unclassifiedCents += BigInt(row.amountCents)
+  }
+  return { categories: [...categories], unclassifiedCents }
+}
+
 async function makePdf(rows: ExportRow[], input: ExportRequest) {
   const [organization] = await getDb()
     .select({ name: organizations.name })
@@ -204,6 +222,19 @@ async function makePdf(rows: ExportRow[], input: ExportRequest) {
     doc.text(
       `${account}: débito ${amount(String(total.debit))} € · crédito ${amount(String(total.credit))} €`,
     )
+  const summary = summarizeExportRows(rows)
+  doc.moveDown().fontSize(13).text('Totais por categoria')
+  doc.fontSize(9)
+  for (const [category, total] of summary.categories)
+    doc.text(
+      `${category}: débito ${amount(String(total.debit))} € · crédito ${amount(String(total.credit))} €`,
+    )
+  if (summary.unclassifiedCents > BigInt(0))
+    doc
+      .moveDown()
+      .text(
+        `Atenção: ${amount(String(summary.unclassifiedCents))} € em linhas de contas não classificadas (other). Rever antes de prestar contas.`,
+      )
   doc.moveDown().fontSize(13).text('Razão')
   doc.fontSize(8)
   for (const row of rows)

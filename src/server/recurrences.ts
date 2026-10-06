@@ -1,5 +1,5 @@
 import 'server-only'
-import { and, asc, eq, inArray, lte, sql } from 'drizzle-orm'
+import { and, asc, eq, inArray, lte } from 'drizzle-orm'
 import { getDb } from '../db/client'
 import {
   accounts,
@@ -194,35 +194,66 @@ export async function createRecurrence(input: RuleInput) {
 
 export async function updateRecurrence(
   input: RuleInput & { ruleId: string; active: boolean },
+  effectiveDate = iso(new Date()),
 ) {
   await validateRule(input, input.active)
-  if (!uuidPattern.test(input.ruleId) || typeof input.active !== 'boolean')
+  if (
+    !uuidPattern.test(input.ruleId) ||
+    typeof input.active !== 'boolean' ||
+    !validDate(effectiveDate)
+  )
     throw new InvalidInputError()
-  const [rule] = await getDb()
-    .update(recurrenceRules)
-    .set({
-      type: input.type,
+  const tomorrow = iso(new Date(utc(effectiveDate).getTime() + 86_400_000))
+  const nextDate = generateDueDates(
+    {
       frequency: input.frequency,
       startDate: input.startDate,
-      endDate: input.endDate,
+      endDate: null,
       anchorDay: Number(input.startDate.slice(8, 10)),
-      description: input.description.trim(),
-      amountCents: input.amountCents,
-      financialAccountId: input.financialAccountId,
-      counterAccountId: input.counterAccountId,
-      fundId: input.fundId ?? null,
-      active: input.active,
-      version: sql`${recurrenceRules.version} + 1`,
-    })
-    .where(
-      and(
-        eq(recurrenceRules.id, input.ruleId),
-        eq(recurrenceRules.organizationId, input.organizationId),
-      ),
-    )
-    .returning()
-  if (!rule) throw new ForbiddenError()
-  return rule
+    },
+    tomorrow,
+    iso(new Date(utc(tomorrow).getTime() + 35 * 86_400_000)),
+  )[0]
+  if (input.active && (!nextDate || (input.endDate && nextDate > input.endDate)))
+    throw new InvalidInputError()
+  return getDb().transaction(async (tx) => {
+    const [previous] = await tx
+      .select()
+      .from(recurrenceRules)
+      .where(
+        and(
+          eq(recurrenceRules.id, input.ruleId),
+          eq(recurrenceRules.organizationId, input.organizationId),
+        ),
+      )
+      .for('update')
+    if (!previous) throw new ForbiddenError()
+    if (!previous.active) throw new ConflictError()
+    const [archived] = await tx
+      .update(recurrenceRules)
+      .set({
+        endDate:
+          previous.endDate && previous.endDate < effectiveDate
+            ? previous.endDate
+            : effectiveDate,
+        active: false,
+      })
+      .where(eq(recurrenceRules.id, previous.id))
+      .returning()
+    if (!input.active) return archived
+    const [revised] = await tx
+      .insert(recurrenceRules)
+      .values({
+        ...input,
+        startDate: nextDate,
+        anchorDay: Number(input.startDate.slice(8, 10)),
+        description: input.description.trim(),
+        fundId: input.fundId ?? null,
+        version: previous.version + 1,
+      })
+      .returning()
+    return revised
+  })
 }
 
 export async function listRecurrences(organizationId: string, actorId: string) {
@@ -257,12 +288,8 @@ export async function listDueOccurrences(
   const rules = await getDb()
     .select()
     .from(recurrenceRules)
-    .where(
-      and(
-        eq(recurrenceRules.organizationId, organizationId),
-        eq(recurrenceRules.active, true),
-      ),
-    )
+    .where(eq(recurrenceRules.organizationId, organizationId))
+  const availableRules = rules.filter((rule) => rule.active || rule.endDate)
   const resolutions = await getDb()
     .select()
     .from(recurrenceOccurrences)
@@ -275,7 +302,7 @@ export async function listDueOccurrences(
   const byKey = new Map(
     resolutions.map((row) => [`${row.ruleId}:${row.dueDate}`, row]),
   )
-  const proposals = rules.flatMap((rule) =>
+  const proposals = availableRules.flatMap((rule) =>
     generateDueDates(rule, from, throughDate).flatMap((dueDate) => {
       const resolution = byKey.get(`${rule.id}:${dueDate}`)
       if (
@@ -309,7 +336,7 @@ export async function listDueOccurrences(
       resolution.postponedUntil > throughDate
     )
       continue
-    const rule = rules.find((item) => item.id === resolution.ruleId)
+    const rule = availableRules.find((item) => item.id === resolution.ruleId)
     if (!rule) continue
     proposals.push({
       ruleId: rule.id,
@@ -350,7 +377,7 @@ export async function confirmOccurrence(input: OccurrenceIdentity) {
         ),
       )
       .for('update')
-    if (!rule || !rule.active) throw new ForbiddenError()
+    if (!rule || (!rule.active && !rule.endDate)) throw new ForbiddenError()
     if (
       !generateDueDates(rule, input.dueDate, input.dueDate).includes(
         input.dueDate,
@@ -437,7 +464,7 @@ export async function skipOccurrence(
         ),
       )
       .for('update')
-    if (!rule || !rule.active) throw new ForbiddenError()
+    if (!rule || (!rule.active && !rule.endDate)) throw new ForbiddenError()
     if (
       !generateDueDates(rule, input.dueDate, input.dueDate).includes(
         input.dueDate,

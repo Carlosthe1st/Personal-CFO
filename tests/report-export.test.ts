@@ -7,7 +7,24 @@ import {
 } from './helpers/database'
 import { createOrganization, listAccounts } from '../src/server/organizations'
 import { postJournal } from '../src/server/journal'
-import { exportReport } from '../src/server/report-export'
+import { exportReport, summarizeExportRows } from '../src/server/report-export'
+
+describe('export summary', () => {
+  it('groups categories and identifies unclassified lines', () => {
+    const rows = [
+      { category: 'expense', side: 'debit', amountCents: '250' },
+      { category: 'other', side: 'debit', amountCents: '100' },
+      { category: 'other', side: 'credit', amountCents: '20' },
+    ] as Parameters<typeof summarizeExportRows>[0]
+    expect(summarizeExportRows(rows)).toEqual({
+      categories: [
+        ['expense', { debit: BigInt(250), credit: BigInt(0) }],
+        ['other', { debit: BigInt(100), credit: BigInt(20) }],
+      ],
+      unclassifiedCents: BigInt(120),
+    })
+  })
+})
 
 describe.skipIf(!process.env.DATABASE_URL_TEST)('report export', () => {
   beforeAll(prepareDatabase)

@@ -1,7 +1,13 @@
 import 'server-only'
-import { and, eq, lte, or, sql } from 'drizzle-orm'
+import { and, eq, isNotNull, lte, or, sql } from 'drizzle-orm'
 import { getDb } from '../db/client'
-import { accounts, journalEntries, journalLines } from '../db/schema'
+import {
+  accounts,
+  journalEntries,
+  journalLines,
+  movements,
+  recurrenceOccurrences,
+} from '../db/schema'
 import { InvalidInputError, requireMember } from './authorization'
 import { listDueOccurrences } from './recurrences'
 
@@ -49,11 +55,29 @@ export async function getCashForecast(
         eq(accounts.organizationId, journalEntries.organizationId),
       ),
     )
+    .leftJoin(
+      movements,
+      and(
+        eq(movements.journalEntryId, journalEntries.id),
+        eq(movements.organizationId, organizationId),
+      ),
+    )
+    .leftJoin(
+      recurrenceOccurrences,
+      and(
+        eq(recurrenceOccurrences.movementId, movements.id),
+        eq(recurrenceOccurrences.organizationId, organizationId),
+      ),
+    )
     .where(
       and(
         eq(journalEntries.organizationId, organizationId),
         eq(journalEntries.status, 'posted'),
         lte(journalEntries.date, horizon),
+        or(
+          lte(journalEntries.date, today),
+          isNotNull(recurrenceOccurrences.movementId),
+        ),
         or(eq(accounts.kind, 'cash'), eq(accounts.kind, 'bank')),
       ),
     )
@@ -99,7 +123,7 @@ export async function getCashForecast(
     points,
     assumptions: [
       'Saldo real: lançamentos confirmados até hoje.',
-      'Projeção: lançamentos futuros confirmados e propostas recorrentes pendentes; não é uma garantia de recebimento.',
+      'Projeção: recorrências futuras pendentes ou confirmadas; lançamentos futuros avulsos não entram e receitas não são garantidas.',
     ],
   }
 }

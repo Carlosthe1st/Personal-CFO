@@ -116,16 +116,16 @@ describe.skipIf(!process.env.DATABASE_URL_TEST)('recurring proposals', () => {
       ruleId: rule.id,
       dueDate: '2026-01-15',
     })
-    await updateRecurrence({
+    const revised = await updateRecurrence({
       ...template,
       ruleId: rule.id,
       amountCents: 2000,
       active: true,
-    })
+    }, '2026-01-20')
     await confirmOccurrence({
       organizationId: org.id,
       actorId: user.id,
-      ruleId: rule.id,
+      ruleId: revised.id,
       dueDate: '2026-02-15',
     })
     expect(
@@ -166,5 +166,53 @@ describe.skipIf(!process.env.DATABASE_URL_TEST)('recurring proposals', () => {
         await listDueOccurrences(org.id, user.id, '2026-02-10', '2026-02-01')
       ).find((item) => item.dueDate === '2026-01-15')?.effectiveDate,
     ).toBe('2026-02-10')
+  })
+  it('preserves overdue and postponed proposals when a rule changes', async () => {
+    const [user] = await testSql`insert into users (email) values ('recurrence-version@example.test') returning id`
+    const org = await createOrganization(user.id, 'Recurring')
+    const accounts = await listAccounts(org.id, user.id)
+    const account = (code: string) => accounts.find((row) => row.code === code)!.id
+    const template = {
+      organizationId: org.id,
+      actorId: user.id,
+      type: 'expense' as const,
+      frequency: 'monthly' as const,
+      startDate: '2026-01-31',
+      endDate: null,
+      description: 'Renda',
+      amountCents: 1000,
+      financialAccountId: account('BANCO'),
+      counterAccountId: account('DESPESA'),
+      fundId: null,
+    }
+    const original = await createRecurrence(template)
+    await skipOccurrence({
+      organizationId: org.id,
+      actorId: user.id,
+      ruleId: original.id,
+      dueDate: '2026-01-31',
+      postponedUntil: '2026-03-05',
+    })
+    const revised = await updateRecurrence({
+      ...template,
+      ruleId: original.id,
+      startDate: '2026-02-01',
+      amountCents: 2000,
+      active: true,
+    }, '2026-02-01')
+    expect(revised.id).not.toBe(original.id)
+    const proposals = await listDueOccurrences(org.id, user.id, '2026-03-05', '2026-03-01')
+    expect(proposals.find((item) => item.ruleId === original.id)).toMatchObject({
+      dueDate: '2026-01-31',
+      effectiveDate: '2026-03-05',
+      amountCents: 1000,
+    })
+    await confirmOccurrence({
+      organizationId: org.id,
+      actorId: user.id,
+      ruleId: original.id,
+      dueDate: '2026-01-31',
+    })
+    expect((await listMovements(org.id, user.id))[0].amountCents).toBe(1000)
   })
 })

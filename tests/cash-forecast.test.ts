@@ -49,12 +49,24 @@ describe.skipIf(!process.env.DATABASE_URL_TEST)('cash forecast', () => {
       counterAccountId: account('DESPESA'),
       fundId: null,
     })
+    await postJournal({
+      organizationId: org.id,
+      actorId: user.id,
+      date: '2026-10-25',
+      description: 'Lançamento futuro avulso',
+      idempotencyKey: 'future-manual',
+      lines: [
+        { accountId: account('DESPESA'), side: 'debit', amountCents: 5000 },
+        { accountId: account('BANCO'), side: 'credit', amountCents: 5000 },
+      ],
+    })
     let forecast = await getCashForecast(org.id, user.id, '2026-10-06')
     expect(forecast.actualCents).toBe('100000')
     expect(
       forecast.points.find((point) => point.date === '2026-10-20')
         ?.projectedCents,
     ).toBe('90000')
+    expect(forecast.points.find((point) => point.date === '2026-10-25')?.projectedCents).toBe('90000')
     await confirmOccurrence({
       organizationId: org.id,
       actorId: user.id,
