@@ -44,7 +44,7 @@ export async function createMovement(input: MovementInput) {
   ])
   return getDb().transaction((tx) => createMovementInTransaction(tx, input))
 }
-async function createMovementInTransaction(
+export async function createMovementInTransaction(
   tx: JournalTransaction,
   input: MovementInput,
 ) {

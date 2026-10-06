@@ -395,6 +395,91 @@ export const receiptFiles = pgTable(
   ],
 )
 
+export const recurrenceRules = pgTable(
+  'recurrence_rules',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    organizationId: uuid('organization_id')
+      .notNull()
+      .references(() => organizations.id),
+    actorId: uuid('actor_id')
+      .notNull()
+      .references(() => users.id),
+    type: text('type').$type<'income' | 'expense'>().notNull(),
+    frequency: text('frequency').$type<'weekly' | 'monthly'>().notNull(),
+    startDate: date('start_date').notNull(),
+    endDate: date('end_date'),
+    anchorDay: integer('anchor_day').notNull(),
+    description: text('description').notNull(),
+    amountCents: bigint('amount_cents', { mode: 'number' }).notNull(),
+    financialAccountId: uuid('financial_account_id').notNull(),
+    counterAccountId: uuid('counter_account_id').notNull(),
+    fundId: uuid('fund_id'),
+    active: boolean('active').notNull().default(true),
+    version: integer('version').notNull().default(1),
+  },
+  (t) => [
+    unique('recurrence_rule_org_id').on(t.organizationId, t.id),
+    foreignKey({
+      columns: [t.organizationId, t.financialAccountId],
+      foreignColumns: [accounts.organizationId, accounts.id],
+    }),
+    foreignKey({
+      columns: [t.organizationId, t.counterAccountId],
+      foreignColumns: [accounts.organizationId, accounts.id],
+    }),
+    foreignKey({
+      columns: [t.organizationId, t.fundId],
+      foreignColumns: [funds.organizationId, funds.id],
+    }),
+    check('recurrence_type', sql`${t.type} in ('income','expense')`),
+    check('recurrence_frequency', sql`${t.frequency} in ('weekly','monthly')`),
+    check('recurrence_anchor', sql`${t.anchorDay} between 1 and 31`),
+    check(
+      'recurrence_amount',
+      sql`${t.amountCents} between 1 and 9007199254740991`,
+    ),
+  ],
+)
+export const recurrenceOccurrences = pgTable(
+  'recurrence_occurrences',
+  {
+    organizationId: uuid('organization_id').notNull(),
+    ruleId: uuid('rule_id').notNull(),
+    dueDate: date('due_date').notNull(),
+    status: text('status')
+      .$type<'confirmed' | 'skipped' | 'postponed'>()
+      .notNull(),
+    postponedUntil: date('postponed_until'),
+    movementId: uuid('movement_id'),
+    actorId: uuid('actor_id')
+      .notNull()
+      .references(() => users.id),
+    resolvedAt: timestamp('resolved_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [
+    primaryKey({ columns: [t.ruleId, t.dueDate] }),
+    foreignKey({
+      columns: [t.organizationId, t.ruleId],
+      foreignColumns: [recurrenceRules.organizationId, recurrenceRules.id],
+    }),
+    foreignKey({
+      columns: [t.organizationId, t.movementId],
+      foreignColumns: [movements.organizationId, movements.id],
+    }),
+    check(
+      'recurrence_status',
+      sql`${t.status} in ('confirmed','skipped','postponed')`,
+    ),
+    check(
+      'recurrence_resolution',
+      sql`(${t.status} = 'confirmed') = (${t.movementId} is not null)`,
+    ),
+  ],
+)
+
 export const statementImports = pgTable(
   'statement_imports',
   {

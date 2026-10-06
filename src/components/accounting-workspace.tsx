@@ -24,6 +24,8 @@ import { CategoryCreator } from './category-creator'
 import { ReportPanel } from './report-panel'
 import { StatementPanel } from './statement-panel'
 import { MovementHistory } from './movement-history'
+import { RecurrencePanel } from './recurrence-panel'
+import { ForecastPanel } from './forecast-panel'
 import { AccountingChat } from './accounting-chat'
 import { emailSignOut } from '../app/login/actions'
 
@@ -542,6 +544,12 @@ export function AccountingWorkspace({
                     revision={revision}
                     onSaved={() => setRevision((value) => value + 1)}
                   />
+                  <RecurrencePanel
+                    organizationId={organizationId}
+                    role={selectedOrganization?.role ?? 'reader'}
+                    accounts={accounts}
+                    funds={funds}
+                  />
                   <StatementPanel
                     key={`statements-${organizationId}`}
                     organizationId={organizationId}
@@ -576,6 +584,7 @@ export function AccountingWorkspace({
                     role={selectedOrganization?.role ?? 'reader'}
                     funds={funds}
                   />
+                  <ForecastPanel organizationId={organizationId} />
                 </div>
               )}
               {view === 'journal' && (
