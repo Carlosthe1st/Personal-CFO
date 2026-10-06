@@ -25,11 +25,11 @@ export type ReceiptStorage = {
 const bucket = 'movement-receipts'
 function storageUrl(key: string, authenticated = false) {
   const base = process.env.SUPABASE_URL
-  const secret = process.env.SUPABASE_SERVICE_ROLE_KEY
+  const secret = process.env.SUPABASE_SECRET_KEY
   if (!base || !secret) throw new Error('Receipt storage is not configured')
   return {
     url: `${base.replace(/\/$/, '')}/storage/v1/object/${authenticated ? 'authenticated/' : ''}${bucket}/${key}`,
-    headers: { apikey: secret, authorization: `Bearer ${secret}` },
+    headers: { apikey: secret },
   }
 }
 export const receiptStorage: ReceiptStorage = {
