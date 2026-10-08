@@ -1,6 +1,12 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { render, screen, cleanup } from '@testing-library/react'
+import {
+  render,
+  screen,
+  cleanup,
+  within,
+  waitFor,
+} from '@testing-library/react'
 import '@testing-library/jest-dom/vitest'
 import { AccountingWorkspace } from '../src/components/accounting-workspace'
 import userEvent from '@testing-library/user-event'
@@ -25,6 +31,48 @@ const entry = {
   events: [{ action: 'journal.posted' }],
 }
 describe('accounting workspace', () => {
+  it('keeps the authorized workspace navigation in one horizontal header', () => {
+    vi.stubGlobal('fetch', async () => Response.json([]))
+    render(<AccountingWorkspace organizations={organizations} />)
+    const banner = screen.getByRole('banner')
+    expect(
+      within(banner).getByRole('navigation', { name: 'Navegação principal' }),
+    ).toBeInTheDocument()
+    expect(
+      within(banner).getByRole('combobox', { name: 'Organização' }),
+    ).toBeInTheDocument()
+    expect(screen.queryByRole('complementary')).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Falar com o CFO' })).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Administração' })).toBeNull()
+  })
+  it('returns to overview and loads the selected organization', async () => {
+    const user = userEvent.setup()
+    const urls: string[] = []
+    vi.stubGlobal('fetch', async (url: string) => {
+      urls.push(url)
+      return Response.json([])
+    })
+    render(
+      <AccountingWorkspace
+        organizations={[
+          organizations[0],
+          { id: 'org-b', name: 'Comunidade', role: 'reader' },
+        ]}
+      />,
+    )
+    await user.click(screen.getByRole('button', { name: 'Movimentos' }))
+    await user.selectOptions(
+      screen.getByRole('combobox', { name: 'Organização' }),
+      'org-b',
+    )
+    expect(screen.getByRole('button', { name: 'Visão geral' })).toHaveAttribute(
+      'aria-current',
+      'page',
+    )
+    await waitFor(() =>
+      expect(urls).toContain('/api/organizations/org-b/accounts'),
+    )
+  })
   it('keeps tasks in the same navigation flow instead of showing every form at once', async () => {
     const user = userEvent.setup()
     vi.stubGlobal('fetch', async (url: string) =>

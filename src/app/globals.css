@@ -1820,3 +1820,217 @@ select:focus-visible {
     margin-bottom: 35px;
   }
 }
+.accounting-frame {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  background: var(--bg);
+}
+.workspace-header {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  gap: clamp(12px, 1.5vw, 24px);
+  min-height: 68px;
+  padding: 10px clamp(18px, 3vw, 48px);
+  background: rgba(255, 255, 255, 0.96);
+  border-bottom: 1px solid var(--line);
+}
+.workspace-header .brand {
+  flex: none;
+  padding: 0;
+  gap: 8px;
+}
+.workspace-header .brand-logo {
+  width: 34px;
+  height: 34px;
+  background: var(--primary);
+}
+.workspace-header .brand strong {
+  font-size: 21px;
+  letter-spacing: -0.06em;
+  color: var(--ink);
+  white-space: nowrap;
+}
+.workspace-header .brand strong span {
+  color: var(--primary);
+  font-weight: 750;
+}
+.workspace-header .organization-select {
+  flex: 0 1 188px;
+  min-width: 0;
+  height: 38px;
+  margin: 0;
+  padding: 0 10px;
+  gap: 8px;
+  border-color: var(--line);
+  background: #fff;
+  border-radius: 11px;
+}
+.workspace-header .org-monogram {
+  width: 25px;
+  height: 25px;
+  background: var(--primary-soft);
+  color: var(--primary);
+  font-size: 12px;
+}
+.workspace-header .organization-select-control {
+  min-width: 0;
+  flex: 1;
+}
+.workspace-header .organization-select select {
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  padding: 0;
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 600;
+  text-overflow: ellipsis;
+}
+.workspace-header .organization-select svg {
+  color: var(--primary);
+}
+.workspace-nav {
+  display: flex;
+  flex: 1;
+  justify-content: center;
+  align-items: center;
+  gap: 2px;
+  min-width: 0;
+}
+.workspace-nav button {
+  flex: none;
+  min-height: 38px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 9px;
+  background: none;
+  color: #60636b;
+  font-size: 12px;
+  font-weight: 550;
+  white-space: nowrap;
+}
+.workspace-nav button:hover,
+.workspace-nav button[aria-current='page'] {
+  background: var(--primary-soft);
+  color: var(--primary);
+}
+.workspace-header .accounting-signout {
+  flex: none;
+  margin: 0;
+}
+.workspace-header .accounting-signout button {
+  color: var(--primary);
+  font-weight: 650;
+  white-space: nowrap;
+}
+.workspace-header .menu-toggle {
+  display: none;
+}
+.workspace-context {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 48px;
+  padding: 0 clamp(18px, 3vw, 48px);
+  background: var(--primary-soft);
+  color: var(--muted);
+  font-size: 12px;
+}
+.workspace-context strong {
+  color: var(--primary);
+}
+.accounting-frame .content-wrap {
+  width: 100%;
+  max-width: 1392px;
+}
+.workspace-mobile-menu {
+  position: fixed;
+  z-index: 60;
+  top: 76px;
+  right: 16px;
+  width: min(330px, calc(100vw - 32px));
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: #fff;
+  box-shadow: 0 20px 48px rgba(23, 23, 26, 0.16);
+}
+.workspace-mobile-menu nav {
+  display: grid;
+  gap: 3px;
+}
+.workspace-mobile-menu nav button {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 40px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 9px;
+  background: #fff;
+  color: var(--ink);
+  text-align: left;
+}
+.workspace-mobile-menu nav button[aria-current='page'] {
+  background: var(--primary-soft);
+  color: var(--primary);
+}
+.workspace-mobile-menu .mobile-close {
+  display: grid;
+  place-items: center;
+  margin: 0 0 8px auto;
+  border: 0;
+  background: #fff;
+  color: var(--primary);
+}
+.workspace-mobile-menu .accounting-signout {
+  margin: 8px 12px 0;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+}
+@media (max-width: 1180px) {
+  .workspace-header .workspace-nav,
+  .workspace-header .accounting-signout {
+    display: none;
+  }
+  .workspace-header .menu-toggle {
+    display: grid;
+    place-items: center;
+    flex: none;
+    width: 38px;
+    height: 38px;
+    margin-left: auto;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    background: #fff;
+    color: var(--primary);
+  }
+}
+@media (max-width: 720px) {
+  .workspace-header {
+    gap: 9px;
+    padding: 10px 14px;
+  }
+  .workspace-header .brand strong {
+    font-size: 18px;
+  }
+  .workspace-header .brand-logo {
+    width: 30px;
+    height: 30px;
+  }
+  .workspace-header .organization-select {
+    flex-basis: 135px;
+  }
+  .workspace-header .org-monogram,
+  .workspace-header .organization-select svg {
+    display: none;
+  }
+  .workspace-context {
+    padding: 0 16px;
+  }
+}

@@ -79,7 +79,7 @@ export function AccountingWorkspace({
   const [dataError, setDataError] = useState(false)
   const [view, setView] = useState<View>('overview')
   const [mobileMenu, setMobileMenu] = useState(false)
-  const sidebarRef = useRef<HTMLElement>(null)
+  const sidebarRef = useRef<HTMLDivElement>(null)
   const menuToggleRef = useRef<HTMLButtonElement>(null)
   const selectedOrganization = ownOrganizations.find(
     (organization) => organization.id === organizationId,
@@ -130,6 +130,11 @@ export function AccountingWorkspace({
     { id: 'reports', label: 'Relatórios', icon: FileSpreadsheet },
     { id: 'management', label: 'Administração', icon: Settings2 },
   ] as const
+  const authorizedNavigation = navigation.filter(
+    ({ id }) =>
+      (id !== 'management' || canManage || !organizationId) &&
+      (id !== 'assistant' || canWrite),
+  )
   function navigate(next: View) {
     setView(next)
     setMobileMenu(false)
@@ -255,13 +260,7 @@ export function AccountingWorkspace({
           onClick={() => setMobileMenu(false)}
         />
       )}
-      <aside
-        ref={sidebarRef}
-        className={`sidebar ${mobileMenu ? 'sidebar-open' : ''}`}
-        role={mobileMenu ? 'dialog' : undefined}
-        aria-modal={mobileMenu ? true : undefined}
-        aria-label={mobileMenu ? 'Menu principal' : undefined}
-      >
+      <header className="workspace-header">
         <div className="brand">
           <div className="brand-logo">
             <ChartNoAxesCombined size={23} strokeWidth={2.3} />
@@ -270,26 +269,16 @@ export function AccountingWorkspace({
             <strong>
               personal<span>cfo</span>
             </strong>
-            <small>FINANÇAS COM CLAREZA</small>
           </div>
-          <button
-            type="button"
-            className="mobile-close"
-            onClick={() => setMobileMenu(false)}
-            aria-label="Fechar menu"
-          >
-            <X size={20} />
-          </button>
         </div>
-        <div className="sidebar-label">ESPAÇO DE TRABALHO</div>
         <label className="organization-select">
           <span className="org-monogram">
             {selectedOrganization?.name.slice(0, 1) ?? '+'}
           </span>
-          <span>
-            <small>Organização</small>
+          <span className="organization-select-control">
             <select
               aria-label="Organização"
+              title={selectedOrganization?.name ?? 'Organização'}
               value={organizationId}
               onChange={(event) => {
                 setOrganizationId(event.target.value)
@@ -305,72 +294,72 @@ export function AccountingWorkspace({
           </span>
           <ChevronDown size={15} />
         </label>
-        <div className="sidebar-label nav-label">MENU PRINCIPAL</div>
-        <nav className="side-nav" aria-label="Navegação principal">
-          {navigation
-            .filter(
-              ({ id }) =>
-                (id !== 'management' || canManage || !organizationId) &&
-                (id !== 'assistant' || canWrite),
-            )
-            .map(({ id, label, icon: Icon }) => (
+        <nav className="workspace-nav" aria-label="Navegação principal">
+          {authorizedNavigation.map(({ id, label }) => (
+            <button
+              key={id}
+              type="button"
+              className={view === id ? 'active' : ''}
+              aria-current={view === id ? 'page' : undefined}
+              onClick={() => navigate(id)}
+            >
+              {label}
+            </button>
+          ))}
+        </nav>
+        <form action={emailSignOut} className="accounting-signout">
+          <button type="submit">Terminar sessão</button>
+        </form>
+        <button
+          ref={menuToggleRef}
+          type="button"
+          className="menu-toggle"
+          onClick={() => setMobileMenu(true)}
+          aria-label="Abrir menu"
+          aria-expanded={mobileMenu}
+        >
+          <Menu size={21} />
+        </button>
+      </header>
+      {mobileMenu && (
+        <div
+          ref={sidebarRef}
+          className="workspace-mobile-menu"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Menu principal"
+        >
+          <button
+            type="button"
+            className="mobile-close"
+            onClick={() => setMobileMenu(false)}
+            aria-label="Fechar menu"
+          >
+            <X size={20} />
+          </button>
+          <nav aria-label="Navegação móvel">
+            {authorizedNavigation.map(({ id, label, icon: Icon }) => (
               <button
                 key={id}
                 type="button"
-                className={view === id ? 'active' : ''}
                 aria-current={view === id ? 'page' : undefined}
                 onClick={() => navigate(id)}
               >
                 <Icon size={18} /> {label}
               </button>
             ))}
-        </nav>
-        <div className="sidebar-bottom">
-          <div className="sidebar-profile">
-            <div className="profile-avatar">
-              {selectedOrganization?.name.slice(0, 1) ?? 'P'}
-            </div>
-            <span>
-              <strong>{selectedOrganization?.name ?? 'Personal CFO'}</strong>
-              <small>
-                {selectedOrganization?.role === 'owner'
-                  ? 'Proprietário'
-                  : selectedOrganization?.role === 'admin'
-                    ? 'Administrador'
-                    : selectedOrganization?.role === 'editor'
-                      ? 'Editor'
-                      : 'Leitor'}
-              </small>
-            </span>
-          </div>
+          </nav>
           <form action={emailSignOut} className="accounting-signout">
             <button type="submit">Terminar sessão</button>
           </form>
         </div>
-      </aside>
+      )}
+      <div className="workspace-context">
+        <span>{selectedOrganization?.name ?? 'Personal CFO'}</span>
+        <span aria-hidden="true">/</span>
+        <strong>{navigation.find((item) => item.id === view)?.label}</strong>
+      </div>
       <main className="main-area accounting-workspace">
-        <header className="topbar">
-          <div className="top-left">
-            <button
-              ref={menuToggleRef}
-              type="button"
-              className="menu-toggle"
-              onClick={() => setMobileMenu(true)}
-              aria-label="Abrir menu"
-              aria-expanded={mobileMenu}
-            >
-              <Menu size={21} />
-            </button>
-            <span>O teu espaço financeiro</span>
-            <span className="top-divider">/</span>
-            <strong>
-              {navigation.find((item) => item.id === view)?.label}
-            </strong>
-          </div>
-          <div className="top-actions">
-            <span className="accounting-live">DADOS DA ORGANIZAÇÃO</span>
-          </div>
-        </header>
         <div className="content-wrap accounting-content">
           {error && <p role="alert">{error}</p>}
           {!organizationId ? (
