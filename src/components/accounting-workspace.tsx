@@ -411,26 +411,13 @@ export function AccountingWorkspace({
                         lugar.
                       </p>
                     </div>
-                  </div>
-                  <div className="hero-card accounting-hero">
-                    <div className="hero-copy">
-                      <span>O TEU CENTRO FINANCEIRO</span>
-                      <h2>Clareza para agir.</h2>
-                      <p>
-                        Regista, acompanha e revê os movimentos da tua
-                        organização.
-                      </p>
-                      <button
-                        type="button"
-                        onClick={() => navigate('movements')}
-                      >
-                        Novo movimento <ArrowLeftRight size={18} />
-                      </button>
-                    </div>
-                    <div className="accounting-hero-total">
-                      <small>Saldo disponível</small>
-                      <strong>{formatEuro(summary.balance / 100)}</strong>
-                    </div>
+                    <button
+                      type="button"
+                      className="overview-action"
+                      onClick={() => navigate('movements')}
+                    >
+                      Novo movimento <ArrowLeftRight size={17} />
+                    </button>
                   </div>
                   <div className="accounting-overview-grid">
                     <div>

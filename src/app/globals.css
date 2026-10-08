@@ -6,8 +6,8 @@
   --line: #e8e6e2;
   --primary: #1b3a6b;
   --primary-soft: #edf1f7;
-  --green: #184f3d;
-  --deep: #102d26;
+  --green: #1b3a6b;
+  --deep: #17171a;
   --bg: #f7f6f4;
   --white: #fff;
 }
@@ -1372,6 +1372,7 @@ select:focus-visible {
 .accounting-frame .main-area {
   min-width: 0;
   flex: 1;
+  background-color: #f7f6f4;
 }
 .accounting-frame .content-wrap {
   max-width: 1280px;
@@ -1387,31 +1388,19 @@ select:focus-visible {
 .accounting-backdrop {
   display: none;
 }
-.accounting-frame .side-nav button {
-  padding: 0 13px;
-}
 .accounting-signout {
   margin: 14px 12px 0;
 }
 .accounting-signout button {
   border: 0;
   background: none;
-  color: #60816d;
+  color: var(--primary);
   font-size: 12px;
   padding: 0;
 }
 .accounting-signout button:hover {
-  color: var(--green);
+  color: #10294f;
   text-decoration: underline;
-}
-.accounting-live {
-  color: #438263;
-  background: #eaf5ec;
-  border-radius: 20px;
-  padding: 10px 15px;
-  font-size: 10px;
-  font-weight: 800;
-  letter-spacing: 1px;
 }
 .accounting-content {
   display: grid;
@@ -1423,39 +1412,33 @@ select:focus-visible {
 .accounting-content .greeting p {
   margin-top: 8px;
 }
-.accounting-hero {
-  min-height: 245px;
-  height: auto;
+.accounting-content .greeting h1 {
+  margin: 0 0 8px;
+  color: var(--ink);
+  font-size: clamp(30px, 3vw, 42px);
+  font-weight: 650;
+  letter-spacing: -0.035em;
 }
-.accounting-hero .hero-copy {
-  min-width: 0;
-  width: calc(100% - 320px);
+.accounting-content .greeting p {
+  color: var(--muted);
+  font-size: 14px;
 }
-.accounting-hero .hero-copy h2 {
-  margin: 10px 0;
-}
-.accounting-hero-total {
-  position: absolute;
-  right: 7%;
-  top: 50%;
-  transform: translateY(-50%) rotate(-5deg);
-  width: 250px;
-  padding: 26px;
-  border: 1px solid #84aa98;
-  background: rgba(255, 255, 255, 0.15);
-  border-radius: 17px;
+.overview-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 42px;
+  padding: 0 18px;
+  border: 1px solid var(--primary);
+  border-radius: 999px;
+  background: var(--primary);
   color: #fff;
-}
-.accounting-hero-total small {
-  display: block;
-  color: #c8e5d1;
-  font-size: 12px;
-  margin-bottom: 18px;
-}
-.accounting-hero-total strong {
-  font-size: 28px;
-  letter-spacing: -1px;
+  font-size: 13px;
+  font-weight: 650;
   white-space: nowrap;
+}
+.overview-action:hover {
+  background: #10294f;
 }
 .accounting-overview-grid {
   display: grid;
@@ -1464,28 +1447,52 @@ select:focus-visible {
 }
 .accounting-overview-grid > div {
   text-align: left;
-  border: 1px solid #e5ece5;
+  border: 1px solid var(--line);
   background: white;
-  border-radius: 15px;
+  border-radius: 16px;
   padding: 24px;
   min-height: 136px;
-  box-shadow: 0 8px 25px rgba(24, 52, 33, 0.035);
+  box-shadow: 0 6px 20px rgba(23, 23, 26, 0.035);
+}
+.accounting-overview-grid > div:nth-child(1) {
+  background: #f1f5fc;
+}
+.accounting-overview-grid > div:nth-child(2) {
+  background: #eef8f3;
+}
+.accounting-overview-grid > div:nth-child(3) {
+  background: #fff2f1;
+}
+.accounting-overview-grid > div:nth-child(4) {
+  background: #f3f0fa;
+}
+.accounting-overview-grid > div:nth-child(1) strong {
+  color: var(--primary);
+}
+.accounting-overview-grid > div:nth-child(2) strong {
+  color: #196747;
+}
+.accounting-overview-grid > div:nth-child(3) strong {
+  color: #a23c42;
+}
+.accounting-overview-grid > div:nth-child(4) strong {
+  color: #574592;
 }
 .accounting-overview-grid strong {
   display: block;
-  font-size: 34px;
-  color: var(--deep);
-  letter-spacing: -1.5px;
+  font-size: clamp(24px, 2.5vw, 34px);
+  letter-spacing: -0.04em;
+  font-variant-numeric: tabular-nums;
 }
 .accounting-overview-grid span {
   display: block;
-  color: #7d9084;
+  color: #4d5059;
   font-weight: 600;
   font-size: 13px;
   margin-bottom: 10px;
 }
 .accounting-overview-grid small {
-  color: #94a399;
+  color: var(--muted);
   font-size: 11px;
 }
 .accounting-insights-grid {
@@ -1500,7 +1507,8 @@ select:focus-visible {
 .accounting-panel > h1,
 .accounting-empty h1 {
   font-size: clamp(27px, 3vw, 38px);
-  letter-spacing: -1.3px;
+  letter-spacing: -0.035em;
+  font-weight: 650;
   margin: 0;
 }
 .accounting-panel > p,
@@ -1517,11 +1525,43 @@ select:focus-visible {
 .accounting-recent,
 .accounting-empty {
   background: #fff;
-  border: 1px solid #e4ebe4;
+  border: 1px solid var(--line);
   border-radius: 16px;
   padding: 24px;
-  box-shadow: 0 8px 30px rgba(24, 52, 33, 0.035);
+  box-shadow: 0 6px 20px rgba(23, 23, 26, 0.035);
   margin: 18px 0;
+}
+.accounting-panel > section,
+.accounting-panel > details {
+  overflow-x: auto;
+}
+.accounting-panel section > p,
+.accounting-panel details > p {
+  color: var(--muted);
+  line-height: 1.55;
+}
+.accounting-panel table {
+  width: 100%;
+  min-width: 600px;
+  border-collapse: collapse;
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+.accounting-panel th,
+.accounting-panel td {
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--line);
+  text-align: left;
+  vertical-align: top;
+}
+.accounting-panel th {
+  background: #f4f5f7;
+  color: #4e5360;
+  font-size: 11px;
+  font-weight: 650;
+}
+.accounting-panel tbody tr:hover {
+  background: #f7f9fc;
 }
 .accounting-panel form form,
 .accounting-panel section form {
@@ -1552,7 +1592,7 @@ select:focus-visible {
 .accounting-panel label,
 .accounting-empty label {
   display: block;
-  color: #40594b;
+  color: var(--ink);
   font-weight: 600;
   font-size: 13px;
   margin: 15px 0;
@@ -1566,8 +1606,8 @@ select:focus-visible {
   min-height: 43px;
   padding: 10px 12px;
   margin-top: 7px;
-  border: 1px solid #d6e2d9;
-  border-radius: 8px;
+  border: 1px solid #c9cbd0;
+  border-radius: 11px;
   background: #fff;
   color: var(--ink);
 }
@@ -1579,15 +1619,15 @@ select:focus-visible {
 .accounting-empty button {
   min-height: 42px;
   padding: 9px 16px;
-  border: 1px solid #c5d9ca;
-  border-radius: 8px;
-  background: #eaf5ec;
-  color: #1b6046;
+  border: 1px solid #d8dfe9;
+  border-radius: 999px;
+  background: var(--primary-soft);
+  color: var(--primary);
   font-weight: 700;
 }
 .accounting-panel button:hover,
 .accounting-empty button:hover {
-  background: #dcf0e3;
+  background: #dfe8f4;
 }
 .accounting-panel button[type='submit'],
 .accounting-empty button[type='submit'] {
@@ -1597,12 +1637,19 @@ select:focus-visible {
 }
 .accounting-panel button[type='submit']:hover,
 .accounting-empty button[type='submit']:hover {
-  background: #0d3d2d;
+  background: #10294f;
 }
 .accounting-panel button:disabled,
 .accounting-empty button:disabled {
   opacity: 0.6;
   cursor: wait;
+}
+.accounting-panel [role='status'],
+.accounting-content > [role='status'] {
+  color: var(--primary);
+  background: var(--primary-soft);
+  border-radius: 11px;
+  padding: 10px 14px;
 }
 .accounting-content [role='alert'] {
   color: #a53f2d;
@@ -1621,7 +1668,7 @@ select:focus-visible {
 .accounting-recent .section-heading button {
   border: 0;
   background: none;
-  color: #257354;
+  color: var(--primary);
   font-weight: 700;
 }
 .accounting-recent ul {
@@ -1648,7 +1695,7 @@ select:focus-visible {
 .accounting-journal-entry {
   background: #fff;
   border: 1px solid var(--line);
-  border-radius: 10px;
+  border-radius: 12px;
   padding: 18px;
   margin: 12px 0;
 }
@@ -1657,7 +1704,7 @@ select:focus-visible {
   margin: 0 0 5px;
 }
 .accounting-journal-entry ul {
-  color: #697d70;
+  color: var(--muted);
   margin-bottom: 0;
 }
 .auth-page {
@@ -1785,15 +1832,10 @@ select:focus-visible {
     border: 0;
     background: rgba(11, 34, 23, 0.4);
   }
-  .accounting-hero .hero-copy {
-    width: 100%;
-  }
-  .accounting-live {
-    font-size: 8px;
-    padding: 8px 10px;
-  }
-  .accounting-hero-total {
-    display: none;
+  .accounting-content .greeting {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 18px;
   }
   .accounting-overview-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1801,10 +1843,17 @@ select:focus-visible {
   }
   .accounting-overview-grid > div {
     min-height: 118px;
-    padding: 17px;
+    padding: 16px;
   }
   .accounting-overview-grid strong {
-    font-size: 23px;
+    font-size: clamp(19px, 5vw, 24px);
+  }
+  .accounting-recent .section-heading {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+  .accounting-recent .section-heading button {
+    white-space: nowrap;
   }
   .accounting-insights-grid {
     grid-template-columns: 1fr;

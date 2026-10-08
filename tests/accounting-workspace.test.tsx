@@ -1,4 +1,6 @@
 // @vitest-environment jsdom
+import { readFileSync } from 'node:fs'
+import { resolve } from 'node:path'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import {
   render,
@@ -14,6 +16,7 @@ import userEvent from '@testing-library/user-event'
 afterEach(() => {
   cleanup()
   vi.unstubAllGlobals()
+  document.head.querySelector('#test-workspace-styles')?.remove()
 })
 const organizations = [
   { id: 'org-a', name: 'Atelier', role: 'reader' as const },
@@ -31,6 +34,20 @@ const entry = {
   events: [{ action: 'journal.posted' }],
 }
 describe('accounting workspace', () => {
+  it('uses the approved sand surface for the financial workspace', () => {
+    const styles = document.createElement('style')
+    styles.id = 'test-workspace-styles'
+    styles.textContent = readFileSync(
+      resolve('src/app/globals.css'),
+      'utf8',
+    ).replace("@import 'tailwindcss';", '')
+    document.head.append(styles)
+    vi.stubGlobal('fetch', async () => Response.json([]))
+    render(<AccountingWorkspace organizations={organizations} />)
+    expect(getComputedStyle(screen.getByRole('main')).backgroundColor).toBe(
+      'rgb(247, 246, 244)',
+    )
+  })
   it('keeps the authorized workspace navigation in one horizontal header', () => {
     vi.stubGlobal('fetch', async () => Response.json([]))
     render(<AccountingWorkspace organizations={organizations} />)
@@ -116,7 +133,7 @@ describe('accounting workspace', () => {
       ),
     )
     render(<AccountingWorkspace organizations={organizations} />)
-    expect(await screen.findAllByText('Saldo disponível')).toHaveLength(2)
+    expect(await screen.findAllByText('Saldo disponível')).toHaveLength(1)
     expect(screen.getByText('Saídas este mês')).toBeInTheDocument()
     expect(screen.getByText('Despesas')).toBeInTheDocument()
   })
