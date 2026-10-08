@@ -138,15 +138,50 @@ describe('accounting workspace', () => {
     vi.stubGlobal('fetch', async () => Response.json([]))
     render(<AccountingWorkspace organizations={organizations} />)
     const toggle = screen.getByRole('button', { name: 'Abrir menu' })
-    await user.click(toggle)
     expect(
-      screen.getByRole('dialog', { name: 'Menu principal' }),
+      within(screen.getByRole('banner')).getByRole('button', {
+        name: 'Abrir menu',
+      }),
+    ).toBe(toggle)
+    expect(toggle).toHaveAttribute('aria-expanded', 'false')
+    await user.click(toggle)
+    const dialog = screen.getByRole('dialog', { name: 'Menu principal' })
+    expect(toggle).toHaveAttribute('aria-expanded', 'true')
+    expect(
+      within(dialog).getByRole('navigation', { name: 'Navegação principal' }),
     ).toBeInTheDocument()
+    expect(
+      within(dialog).queryByRole('button', { name: 'Falar com o CFO' }),
+    ).toBeNull()
+    expect(
+      within(dialog).queryByRole('button', { name: 'Administração' }),
+    ).toBeNull()
+    const close = within(dialog).getByRole('button', { name: 'Fechar menu' })
+    close.focus()
+    await user.keyboard('{Shift>}{Tab}{/Shift}')
+    expect(dialog.contains(document.activeElement)).toBe(true)
     await user.keyboard('{Escape}')
     expect(
       screen.queryByRole('dialog', { name: 'Menu principal' }),
     ).not.toBeInTheDocument()
     expect(toggle).toHaveFocus()
+  })
+  it('closes the compact menu after selecting a view', async () => {
+    const user = userEvent.setup()
+    vi.stubGlobal('fetch', async () => Response.json([]))
+    render(<AccountingWorkspace organizations={organizations} />)
+    await user.click(screen.getByRole('button', { name: 'Abrir menu' }))
+    await user.click(
+      within(screen.getByRole('dialog', { name: 'Menu principal' })).getByRole(
+        'button',
+        { name: 'Movimentos' },
+      ),
+    )
+    expect(screen.queryByRole('dialog', { name: 'Menu principal' })).toBeNull()
+    expect(screen.getByRole('button', { name: 'Movimentos' })).toHaveAttribute(
+      'aria-current',
+      'page',
+    )
   })
   it('records a simple expense through the movements API', async () => {
     const user = userEvent.setup()

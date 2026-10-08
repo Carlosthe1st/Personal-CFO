@@ -79,7 +79,7 @@ export function AccountingWorkspace({
   const [dataError, setDataError] = useState(false)
   const [view, setView] = useState<View>('overview')
   const [mobileMenu, setMobileMenu] = useState(false)
-  const sidebarRef = useRef<HTMLDivElement>(null)
+  const mobileMenuRef = useRef<HTMLDivElement>(null)
   const menuToggleRef = useRef<HTMLButtonElement>(null)
   const selectedOrganization = ownOrganizations.find(
     (organization) => organization.id === organizationId,
@@ -172,14 +172,14 @@ export function AccountingWorkspace({
     const previousOverflow = document.body.style.overflow
     const menuToggle = menuToggleRef.current
     document.body.style.overflow = 'hidden'
-    sidebarRef.current
+    mobileMenuRef.current
       ?.querySelector<HTMLButtonElement>('.mobile-close')
       ?.focus()
     function onKeyDown(event: KeyboardEvent) {
       if (event.key === 'Escape') setMobileMenu(false)
-      if (event.key !== 'Tab' || !sidebarRef.current) return
+      if (event.key !== 'Tab' || !mobileMenuRef.current) return
       const focusable = [
-        ...sidebarRef.current.querySelectorAll<HTMLElement>(
+        ...mobileMenuRef.current.querySelectorAll<HTMLElement>(
           'button:not([disabled]), a[href], select:not([disabled])',
         ),
       ]
@@ -323,7 +323,7 @@ export function AccountingWorkspace({
       </header>
       {mobileMenu && (
         <div
-          ref={sidebarRef}
+          ref={mobileMenuRef}
           className="workspace-mobile-menu"
           role="dialog"
           aria-modal="true"
@@ -337,7 +337,7 @@ export function AccountingWorkspace({
           >
             <X size={20} />
           </button>
-          <nav aria-label="Navegação móvel">
+          <nav aria-label="Navegação principal">
             {authorizedNavigation.map(({ id, label, icon: Icon }) => (
               <button
                 key={id}
