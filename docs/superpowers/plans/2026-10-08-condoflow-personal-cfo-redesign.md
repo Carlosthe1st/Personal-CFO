@@ -15,6 +15,7 @@
 - Preserve the name Personal CFO, Portuguese product copy, live financial data, login flow, roles, and organization isolation.
 - Use `#F7F6F4` background, `#17171A` text, `#1B3A6B` primary, `#EDF1F7` subtle blue; Geist text and Geist Mono only for small metadata.
 - Desktop: one horizontal navigation for the seven existing views; mobile: authorized views in an operable menu with Escape and focus restoration.
+- At 390 px, the four overview metrics stay in a two-column, two-row grid; use restrained distinct color accents without altering real values.
 - `/` keeps redirecting through `/contabilidade`; unauthenticated visitors continue to `/login`.
 - Do not add a UI library, change financial APIs or schema, invent production records, or copy CondoFlow marketing content.
 - Before editing Next.js files, read the relevant local `node_modules/next/dist/docs/` guidance as instructed by `AGENTS.md`.
@@ -44,6 +45,7 @@ The user-approved test seams are the rendered UI and actual browser, not interna
 ### Task 1: Shared visual tokens, fonts, and authentication
 
 **Files:**
+
 - Modify: `src/app/layout.tsx`, `src/app/globals.css`, `src/components/auth-brand.tsx`
 - Modify only if markup needs a shared class: `src/app/login/page.tsx`, `src/app/login/check-email/page.tsx`, `src/app/auth/confirm/page.tsx`
 - Test: `tests/auth-confirm-ui.test.tsx` and existing auth tests
@@ -60,6 +62,7 @@ The user-approved test seams are the rendered UI and actual browser, not interna
 ### Task 2: One horizontal desktop shell
 
 **Files:**
+
 - Modify: `src/components/accounting-workspace.tsx`, `src/app/globals.css`
 - Test: `tests/accounting-workspace.test.tsx`
 
@@ -74,6 +77,7 @@ The user-approved test seams are the rendered UI and actual browser, not interna
 ### Task 3: Compact accessible navigation
 
 **Files:**
+
 - Modify: `src/components/accounting-workspace.tsx`, `src/app/globals.css`
 - Test: `tests/accounting-workspace.test.tsx`
 
@@ -88,13 +92,14 @@ The user-approved test seams are the rendered UI and actual browser, not interna
 ### Task 4: Unify every active financial view and complete verification
 
 **Files:**
+
 - Modify: `src/app/globals.css`
 - Modify only when a reusable semantic wrapper is necessary: `src/components/accounting-workspace.tsx` and active view/panel components imported by it
 - Test: `tests/accounting-workspace.test.tsx`, `tests/auth-confirm-ui.test.tsx`, existing budget/movement/report/management/chat tests
 
 **Interfaces:** Consumes Task 1 tokens and Tasks 2–3 shell. Does not alter component props, financial calculations, API request paths, form payloads or permissions. Produces one consistent card, table, field, button, badge and empty/error-state presentation across all active views.
 
-- [ ] **Step 1: Write failing visual-contract tests at public seams.** Reuse the stylesheet injection from `auth-confirm-ui.test.tsx` in `accounting-workspace.test.tsx`, render `AccountingWorkspace` with mocked `fetch`, and assert `getComputedStyle(screen.getByRole('main')).backgroundColor` is `rgb(247, 246, 244)`; the old content surface must fail this assertion. Keep the existing failed-fetch test, which already asserts `role="alert"` and the `Tentar novamente` button, as the behavior baseline.
+- [ ] **Step 1: Write failing visual-contract tests at public seams.** Reuse the stylesheet injection from `auth-confirm-ui.test.tsx` in `accounting-workspace.test.tsx`, render `AccountingWorkspace` with mocked `fetch`, and assert `getComputedStyle(screen.getByRole('main')).backgroundColor` is `rgb(247, 246, 244)`; the old content surface must fail this assertion. Keep the existing failed-fetch test, which already asserts `role="alert"` and the `Tentar novamente` button, as the behavior baseline. Browser acceptance must check four overview metrics in a 2×2 arrangement at 390 px.
 - [ ] **Step 2: Run RED.** `npx vitest run tests/accounting-workspace.test.tsx tests/auth-confirm-ui.test.tsx`; expect the visual-contract assertion to fail on remaining green styles.
 - [ ] **Step 3: Implement shared view styling.** Replace the active green declarations for `.accounting-content` and its child cards, charts, metric blocks, tables, forms, badges and task panels with token-based styles. Preserve semantic danger/success colors, high-contrast focus and readable numeric alignment. Avoid adding a one-off override for every component; group selectors by existing semantic class. Remove old `.sidebar`, `.side-nav`, obsolete mobile sidebar and unused active-view rules once their replacements are verified. Leave dormant demonstration styles alone unless they conflict with active pages.
 - [ ] **Step 4: Run GREEN and full checks.** Run focused tests, `npm test`, `npm run typecheck`, `npm run lint`, `npm run format:check`, and `npm run build`; fix caused failures, and explicitly report any unrelated baseline failure. Run `impeccable detect --json` if the installed CLI is available; otherwise use its prescribed manual visual checklist.

@@ -27,6 +27,7 @@ Em ecrãs estreitos, a barra conserva marca, organização e um botão de menu; 
 - `/contabilidade` aplica o novo shell a Visão geral, Movimentos, Falar com o CFO, Orçamentos, Diário, Relatórios e Administração. Painéis internos — fundos, recorrências, previsão, contas, extratos, comprovativos e membros — herdam os mesmos controles e espaçamento.
 - `/` continua a encaminhar para `/contabilidade`, que envia visitantes não autenticados para `/login`. Não se cria uma landing page nem se replica a demonstração antiga que não está exposta nesta rota.
 - Estados vazio, a carregar, erro, sucesso e permissões insuficientes pertencem ao mesmo sistema; nenhum mostra números fictícios como dados de produção.
+- No telemóvel, os quatro indicadores principais da visão geral ficam em duas colunas e duas linhas: saldo/rendimentos, depois despesas/poupança líquida. Manter acentos de cor distintos e funcionais sem sacrificar contraste.
 
 ## Estrutura de implementação
 

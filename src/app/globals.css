@@ -1,12 +1,14 @@
 @import 'tailwindcss';
 
 :root {
-  --ink: #193129;
-  --muted: #819187;
-  --line: #e8ede7;
+  --ink: #17171a;
+  --muted: #686870;
+  --line: #e8e6e2;
+  --primary: #1b3a6b;
+  --primary-soft: #edf1f7;
   --green: #184f3d;
   --deep: #102d26;
-  --bg: #f7f9f6;
+  --bg: #f7f6f4;
   --white: #fff;
 }
 * {
@@ -19,7 +21,7 @@ body {
   margin: 0;
   background: var(--bg);
   color: var(--ink);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-geist), Arial, Helvetica, sans-serif;
 }
 button,
 input,
@@ -37,7 +39,7 @@ button:focus-visible,
 input:focus-visible,
 textarea:focus-visible,
 select:focus-visible {
-  outline: 3px solid #a7d8bb;
+  outline: 3px solid #678bc8;
   outline-offset: 2px;
 }
 .app-frame {
@@ -1367,86 +1369,454 @@ select:focus-visible {
     flex-direction: column;
   }
 }
-.accounting-frame .main-area { min-width: 0; flex: 1; }
-.accounting-frame .content-wrap { max-width: 1280px; margin: 0 auto; }
-.accounting-frame .organization-select { margin: 0; }
-.accounting-frame .organization-select select { margin: 0; padding: 0; }
-.accounting-backdrop { display: none; }
-.accounting-frame .side-nav button { padding: 0 13px; }
-.accounting-signout { margin: 14px 12px 0; }
-.accounting-signout button { border: 0; background: none; color: #60816d; font-size: 12px; padding: 0; }
-.accounting-signout button:hover { color: var(--green); text-decoration: underline; }
-.accounting-live { color: #438263; background: #eaf5ec; border-radius: 20px; padding: 10px 15px; font-size: 10px; font-weight: 800; letter-spacing: 1px; }
-.accounting-content { display: grid; gap: 24px; }
-.accounting-content .greeting { margin-bottom: 0; }
-.accounting-content .greeting p { margin-top: 8px; }
-.accounting-hero { min-height: 245px; height: auto; }
-.accounting-hero .hero-copy { min-width: 0; width: calc(100% - 320px); }
-.accounting-hero .hero-copy h2 { margin: 10px 0; }
-.accounting-hero-total { position: absolute; right: 7%; top: 50%; transform: translateY(-50%) rotate(-5deg); width: 250px; padding: 26px; border: 1px solid #84aa98; background: rgba(255,255,255,.15); border-radius: 17px; color: #fff; }
-.accounting-hero-total small { display: block; color: #c8e5d1; font-size: 12px; margin-bottom: 18px; }
-.accounting-hero-total strong { font-size: 28px; letter-spacing: -1px; white-space: nowrap; }
-.accounting-overview-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; }
-.accounting-overview-grid > div { text-align: left; border: 1px solid #e5ece5; background: white; border-radius: 15px; padding: 24px; min-height: 136px; box-shadow: 0 8px 25px rgba(24, 52, 33, .035); }
-.accounting-overview-grid strong { display: block; font-size: 34px; color: var(--deep); letter-spacing: -1.5px; }
-.accounting-overview-grid span { display: block; color: #7d9084; font-weight: 600; font-size: 13px; margin-bottom: 10px; }
-.accounting-overview-grid small { color: #94a399; font-size: 11px; }
-.accounting-insights-grid { display: grid; grid-template-columns: 1fr 1.3fr; gap: 18px; align-items: start; }
-.accounting-insights-grid .accounting-recent { margin-top: 0; }
-.accounting-panel > h1, .accounting-empty h1 { font-size: clamp(27px, 3vw, 38px); letter-spacing: -1.3px; margin: 0; }
-.accounting-panel > p, .accounting-empty > p { color: var(--muted); margin: 3px 0 22px; }
-.accounting-panel { min-width: 0; }
-.accounting-panel > form, .accounting-panel > section, .accounting-panel > details,
-.accounting-recent, .accounting-empty { background: #fff; border: 1px solid #e4ebe4; border-radius: 16px; padding: 24px; box-shadow: 0 8px 30px rgba(24, 52, 33, .035); margin: 18px 0; }
-.accounting-panel form form, .accounting-panel section form { border: 0; box-shadow: none; padding: 0; }
-.accounting-panel section > h2, .accounting-panel form > h2, .accounting-recent h2 { font-size: 19px; margin: 0 0 16px; letter-spacing: -.35px; }
-.accounting-panel details summary { cursor: pointer; font-size: 18px; font-weight: 700; }
-.accounting-panel details[open] summary { margin-bottom: 20px; }
-.accounting-panel fieldset { border: 0; padding: 0; min-width: 0; }
-.accounting-panel label, .accounting-empty label { display: block; color: #40594b; font-weight: 600; font-size: 13px; margin: 15px 0; }
-.accounting-panel input, .accounting-panel select, .accounting-panel textarea,
-.accounting-empty input { display: block; width: 100%; min-height: 43px; padding: 10px 12px; margin-top: 7px; border: 1px solid #d6e2d9; border-radius: 8px; background: #fff; color: var(--ink); }
-.accounting-panel textarea { min-height: 104px; resize: vertical; }
-.accounting-panel button, .accounting-empty button { min-height: 42px; padding: 9px 16px; border: 1px solid #c5d9ca; border-radius: 8px; background: #eaf5ec; color: #1b6046; font-weight: 700; }
-.accounting-panel button:hover, .accounting-empty button:hover { background: #dcf0e3; }
-.accounting-panel button[type='submit'], .accounting-empty button[type='submit'] { background: var(--green); border-color: var(--green); color: #fff; }
-.accounting-panel button[type='submit']:hover, .accounting-empty button[type='submit']:hover { background: #0d3d2d; }
-.accounting-panel button:disabled, .accounting-empty button:disabled { opacity: .6; cursor: wait; }
-.accounting-content [role='alert'] { color: #a53f2d; background: #fff3ee; border: 1px solid #f0d3c7; border-radius: 8px; padding: 12px 14px; }
-.accounting-recent .section-heading, .accounting-panel .section-heading { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
-.accounting-recent .section-heading button { border: 0; background: none; color: #257354; font-weight: 700; }
-.accounting-recent ul { list-style: none; padding: 0; margin: 0; }
-.accounting-recent li { display: flex; justify-content: space-between; gap: 16px; border-top: 1px solid var(--line); padding: 15px 0; }
-.accounting-recent time, .accounting-journal-entry time { color: var(--muted); font-size: 12px; }
-.accounting-categories li strong { font-size: 13px; white-space: nowrap; }
-.accounting-journal-entry { background: #fff; border: 1px solid var(--line); border-radius: 10px; padding: 18px; margin: 12px 0; }
-.accounting-journal-entry h3 { font-size: 15px; margin: 0 0 5px; }
-.accounting-journal-entry ul { color: #697d70; margin-bottom: 0; }
-.auth-page { min-height: 100vh; display: grid; place-items: center; padding: 30px 16px; background: radial-gradient(circle at 85% 12%, #e8f3e9, transparent 33%), var(--bg); }
-.auth-card { width: min(100%, 470px); background: #fff; border: 1px solid #e4ebe4; border-radius: 20px; padding: clamp(28px, 5vw, 44px); box-shadow: 0 22px 70px rgba(20, 54, 37, .09); }
-.auth-brand { display: flex; align-items: center; gap: 11px; color: var(--deep); font-size: 26px; font-weight: 800; letter-spacing: -1.6px; margin-bottom: 45px; }
-.auth-brand strong { color: #277450; font-weight: 400; }
-.auth-brand-mark { width: 40px; height: 40px; display: grid; place-items: center; border-radius: 11px; background: var(--green); color: #fff; font-size: 27px; line-height: 1; }
-.auth-eyebrow { display: block; color: #428265; font-size: 11px; font-weight: 800; letter-spacing: 1.5px; margin-bottom: 12px; }
-.auth-card h1 { font-size: clamp(29px, 4vw, 37px); line-height: 1.13; letter-spacing: -1.3px; margin: 0 0 13px; }
-.auth-card p { color: #74877b; line-height: 1.55; margin: 0 0 28px; }
-.auth-card label { display: block; font-size: 13px; color: #385342; font-weight: 700; margin-bottom: 8px; }
-.auth-card input { width: 100%; min-height: 50px; padding: 12px 14px; border-radius: 9px; border: 1px solid #cdddcf; background: #fbfdfb; }
-.auth-card button { width: 100%; min-height: 50px; margin-top: 16px; padding: 12px 18px; border: 1px solid #184f3d; border-radius: 9px; background: #184f3d; color: #fff; font-weight: 700; display: flex; align-items: center; justify-content: space-between; }
-.auth-card button:hover { background: #0d3d2d; }
-.auth-card small { display: block; margin-top: 24px; color: #8a9c90; font-size: 12px; line-height: 1.5; }
-.auth-card .auth-error { color: #9d3d2e; background: #fff3ee; padding: 12px; border-radius: 8px; margin-bottom: 20px; }
-.auth-secondary-link { color: var(--green); font-weight: 700; text-decoration: none; }
-.auth-secondary-link:hover { text-decoration: underline; }
+.accounting-frame .main-area {
+  min-width: 0;
+  flex: 1;
+}
+.accounting-frame .content-wrap {
+  max-width: 1280px;
+  margin: 0 auto;
+}
+.accounting-frame .organization-select {
+  margin: 0;
+}
+.accounting-frame .organization-select select {
+  margin: 0;
+  padding: 0;
+}
+.accounting-backdrop {
+  display: none;
+}
+.accounting-frame .side-nav button {
+  padding: 0 13px;
+}
+.accounting-signout {
+  margin: 14px 12px 0;
+}
+.accounting-signout button {
+  border: 0;
+  background: none;
+  color: #60816d;
+  font-size: 12px;
+  padding: 0;
+}
+.accounting-signout button:hover {
+  color: var(--green);
+  text-decoration: underline;
+}
+.accounting-live {
+  color: #438263;
+  background: #eaf5ec;
+  border-radius: 20px;
+  padding: 10px 15px;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 1px;
+}
+.accounting-content {
+  display: grid;
+  gap: 24px;
+}
+.accounting-content .greeting {
+  margin-bottom: 0;
+}
+.accounting-content .greeting p {
+  margin-top: 8px;
+}
+.accounting-hero {
+  min-height: 245px;
+  height: auto;
+}
+.accounting-hero .hero-copy {
+  min-width: 0;
+  width: calc(100% - 320px);
+}
+.accounting-hero .hero-copy h2 {
+  margin: 10px 0;
+}
+.accounting-hero-total {
+  position: absolute;
+  right: 7%;
+  top: 50%;
+  transform: translateY(-50%) rotate(-5deg);
+  width: 250px;
+  padding: 26px;
+  border: 1px solid #84aa98;
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 17px;
+  color: #fff;
+}
+.accounting-hero-total small {
+  display: block;
+  color: #c8e5d1;
+  font-size: 12px;
+  margin-bottom: 18px;
+}
+.accounting-hero-total strong {
+  font-size: 28px;
+  letter-spacing: -1px;
+  white-space: nowrap;
+}
+.accounting-overview-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+}
+.accounting-overview-grid > div {
+  text-align: left;
+  border: 1px solid #e5ece5;
+  background: white;
+  border-radius: 15px;
+  padding: 24px;
+  min-height: 136px;
+  box-shadow: 0 8px 25px rgba(24, 52, 33, 0.035);
+}
+.accounting-overview-grid strong {
+  display: block;
+  font-size: 34px;
+  color: var(--deep);
+  letter-spacing: -1.5px;
+}
+.accounting-overview-grid span {
+  display: block;
+  color: #7d9084;
+  font-weight: 600;
+  font-size: 13px;
+  margin-bottom: 10px;
+}
+.accounting-overview-grid small {
+  color: #94a399;
+  font-size: 11px;
+}
+.accounting-insights-grid {
+  display: grid;
+  grid-template-columns: 1fr 1.3fr;
+  gap: 18px;
+  align-items: start;
+}
+.accounting-insights-grid .accounting-recent {
+  margin-top: 0;
+}
+.accounting-panel > h1,
+.accounting-empty h1 {
+  font-size: clamp(27px, 3vw, 38px);
+  letter-spacing: -1.3px;
+  margin: 0;
+}
+.accounting-panel > p,
+.accounting-empty > p {
+  color: var(--muted);
+  margin: 3px 0 22px;
+}
+.accounting-panel {
+  min-width: 0;
+}
+.accounting-panel > form,
+.accounting-panel > section,
+.accounting-panel > details,
+.accounting-recent,
+.accounting-empty {
+  background: #fff;
+  border: 1px solid #e4ebe4;
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 8px 30px rgba(24, 52, 33, 0.035);
+  margin: 18px 0;
+}
+.accounting-panel form form,
+.accounting-panel section form {
+  border: 0;
+  box-shadow: none;
+  padding: 0;
+}
+.accounting-panel section > h2,
+.accounting-panel form > h2,
+.accounting-recent h2 {
+  font-size: 19px;
+  margin: 0 0 16px;
+  letter-spacing: -0.35px;
+}
+.accounting-panel details summary {
+  cursor: pointer;
+  font-size: 18px;
+  font-weight: 700;
+}
+.accounting-panel details[open] summary {
+  margin-bottom: 20px;
+}
+.accounting-panel fieldset {
+  border: 0;
+  padding: 0;
+  min-width: 0;
+}
+.accounting-panel label,
+.accounting-empty label {
+  display: block;
+  color: #40594b;
+  font-weight: 600;
+  font-size: 13px;
+  margin: 15px 0;
+}
+.accounting-panel input,
+.accounting-panel select,
+.accounting-panel textarea,
+.accounting-empty input {
+  display: block;
+  width: 100%;
+  min-height: 43px;
+  padding: 10px 12px;
+  margin-top: 7px;
+  border: 1px solid #d6e2d9;
+  border-radius: 8px;
+  background: #fff;
+  color: var(--ink);
+}
+.accounting-panel textarea {
+  min-height: 104px;
+  resize: vertical;
+}
+.accounting-panel button,
+.accounting-empty button {
+  min-height: 42px;
+  padding: 9px 16px;
+  border: 1px solid #c5d9ca;
+  border-radius: 8px;
+  background: #eaf5ec;
+  color: #1b6046;
+  font-weight: 700;
+}
+.accounting-panel button:hover,
+.accounting-empty button:hover {
+  background: #dcf0e3;
+}
+.accounting-panel button[type='submit'],
+.accounting-empty button[type='submit'] {
+  background: var(--green);
+  border-color: var(--green);
+  color: #fff;
+}
+.accounting-panel button[type='submit']:hover,
+.accounting-empty button[type='submit']:hover {
+  background: #0d3d2d;
+}
+.accounting-panel button:disabled,
+.accounting-empty button:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+.accounting-content [role='alert'] {
+  color: #a53f2d;
+  background: #fff3ee;
+  border: 1px solid #f0d3c7;
+  border-radius: 8px;
+  padding: 12px 14px;
+}
+.accounting-recent .section-heading,
+.accounting-panel .section-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+.accounting-recent .section-heading button {
+  border: 0;
+  background: none;
+  color: #257354;
+  font-weight: 700;
+}
+.accounting-recent ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.accounting-recent li {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  border-top: 1px solid var(--line);
+  padding: 15px 0;
+}
+.accounting-recent time,
+.accounting-journal-entry time {
+  color: var(--muted);
+  font-size: 12px;
+}
+.accounting-categories li strong {
+  font-size: 13px;
+  white-space: nowrap;
+}
+.accounting-journal-entry {
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 18px;
+  margin: 12px 0;
+}
+.accounting-journal-entry h3 {
+  font-size: 15px;
+  margin: 0 0 5px;
+}
+.accounting-journal-entry ul {
+  color: #697d70;
+  margin-bottom: 0;
+}
+.auth-page {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 30px 16px;
+  background-color: #f7f6f4;
+}
+.auth-card {
+  width: min(100%, 470px);
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  padding: clamp(28px, 5vw, 44px);
+  box-shadow: 0 20px 55px rgba(27, 58, 107, 0.08);
+}
+.auth-brand {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  color: var(--ink);
+  font-size: 26px;
+  font-weight: 750;
+  letter-spacing: -1.1px;
+  margin-bottom: 42px;
+}
+.auth-brand strong {
+  color: var(--primary);
+  font-weight: 750;
+}
+.auth-brand-mark {
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  border-radius: 11px;
+  background: var(--primary);
+  color: #fff;
+  font-size: 27px;
+  line-height: 1;
+}
+.auth-eyebrow {
+  display: block;
+  color: var(--primary);
+  font-family: var(--font-geist-mono), monospace;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  margin-bottom: 12px;
+}
+.auth-card h1 {
+  font-size: clamp(29px, 4vw, 37px);
+  line-height: 1.13;
+  letter-spacing: -0.035em;
+  margin: 0 0 13px;
+}
+.auth-card p {
+  color: var(--muted);
+  line-height: 1.55;
+  margin: 0 0 28px;
+}
+.auth-card label {
+  display: block;
+  font-size: 13px;
+  color: var(--ink);
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+.auth-card input {
+  width: 100%;
+  min-height: 50px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid #c9cbd0;
+  background: #fff;
+  color: var(--ink);
+}
+.auth-card button {
+  width: 100%;
+  min-height: 50px;
+  margin-top: 16px;
+  padding: 12px 18px;
+  border: 1px solid #1b3a6b;
+  border-radius: 999px;
+  background: #1b3a6b;
+  color: #fff;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.auth-card button:hover {
+  background: #10294f;
+}
+.auth-card small {
+  display: block;
+  margin-top: 24px;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
+.auth-card .auth-error {
+  color: #9d3d2e;
+  background: #fff3ee;
+  padding: 12px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+}
+.auth-secondary-link {
+  color: var(--primary);
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.auth-secondary-link:hover {
+  text-decoration: underline;
+}
 @media (max-width: 720px) {
-  .accounting-backdrop { display: block; position: fixed; inset: 0; z-index: 45; border: 0; background: rgba(11, 34, 23, .4); }
-  .accounting-hero .hero-copy { width: 100%; }
-  .accounting-live { font-size: 8px; padding: 8px 10px; }
-  .accounting-hero-total { display: none; }
-  .accounting-overview-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
-  .accounting-overview-grid > div { min-height: 118px; padding: 17px; }
-  .accounting-overview-grid strong { font-size: 23px; }
-  .accounting-insights-grid { grid-template-columns: 1fr; }
-  .accounting-panel > form, .accounting-panel > section, .accounting-panel > details, .accounting-recent, .accounting-empty { padding: 18px; }
-  .auth-brand { margin-bottom: 35px; }
+  .accounting-backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 45;
+    border: 0;
+    background: rgba(11, 34, 23, 0.4);
+  }
+  .accounting-hero .hero-copy {
+    width: 100%;
+  }
+  .accounting-live {
+    font-size: 8px;
+    padding: 8px 10px;
+  }
+  .accounting-hero-total {
+    display: none;
+  }
+  .accounting-overview-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+  .accounting-overview-grid > div {
+    min-height: 118px;
+    padding: 17px;
+  }
+  .accounting-overview-grid strong {
+    font-size: 23px;
+  }
+  .accounting-insights-grid {
+    grid-template-columns: 1fr;
+  }
+  .accounting-panel > form,
+  .accounting-panel > section,
+  .accounting-panel > details,
+  .accounting-recent,
+  .accounting-empty {
+    padding: 18px;
+  }
+  .auth-brand {
+    margin-bottom: 35px;
+  }
 }
