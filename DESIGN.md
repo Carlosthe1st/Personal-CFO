@@ -1,113 +1,95 @@
 ---
 name: Personal CFO
-description: Um espaço financeiro claro para pequenas organizações portuguesas.
+description: Clareza financeira para organizações portuguesas.
 colors:
-  ink: "#193129"
-  muted: "#819187"
-  line: "#e8ede7"
-  primary-green: "#184f3d"
-  deep-green: "#102d26"
-  page: "#f7f9f6"
-  surface: "#ffffff"
-  active-green: "#e9f4ed"
-  warning: "#a53f2d"
+  ink: '#17171A'
+  muted: '#686870'
+  line: '#E8E6E2'
+  primary: '#1B3A6B'
+  primary-soft: '#EDF1F7'
+  page: '#F7F6F4'
+  surface: '#FFFFFF'
+  success: '#196747'
+  danger: '#A23C42'
 typography:
   headline:
-    fontFamily: "Arial, Helvetica, sans-serif"
-    fontSize: "32px"
+    fontFamily: 'Geist, Arial, sans-serif'
     fontWeight: 700
-    lineHeight: 1.2
-    letterSpacing: "-1.4px"
+    letterSpacing: '-0.035em'
   body:
-    fontFamily: "Arial, Helvetica, sans-serif"
-    fontSize: "13px"
-  label:
-    fontFamily: "Arial, Helvetica, sans-serif"
-    fontSize: "10px"
-    fontWeight: 800
-    letterSpacing: "1.5px"
+    fontFamily: 'Geist, Arial, sans-serif'
+  metadata:
+    fontFamily: 'Geist Mono, monospace'
 rounded:
-  control: "8px"
-  navigation: "9px"
-  card: "16px"
-  pill: "20px"
+  control: '10px'
+  card: '16px'
+  pill: '999px'
 spacing:
-  compact: "10px"
-  regular: "16px"
-  panel: "24px"
+  compact: '10px'
+  regular: '16px'
+  panel: '24px'
 components:
   button-primary:
-    backgroundColor: "{colors.primary-green}"
-    textColor: "{colors.surface}"
-    rounded: "{rounded.control}"
-    padding: "9px 16px"
-  button-secondary:
-    backgroundColor: "{colors.active-green}"
-    textColor: "{colors.primary-green}"
-    rounded: "{rounded.control}"
-    padding: "9px 16px"
+    backgroundColor: '{colors.primary}'
+    textColor: '{colors.surface}'
+    rounded: '{rounded.pill}'
+    padding: '12px 18px'
   card:
-    backgroundColor: "{colors.surface}"
-    textColor: "{colors.ink}"
-    rounded: "{rounded.card}"
-    padding: "24px"
+    backgroundColor: '{colors.surface}'
+    textColor: '{colors.ink}'
+    rounded: '{rounded.card}'
+    padding: '24px'
 ---
 
 # Design System: Personal CFO
 
 ## Overview
 
-**Creative North Star: "O centro financeiro claro"**
+**Creative North Star: "O centro financeiro sereno"**
 
-The authenticated workspace extends the green and white demo. Its visual language stays calm and practical: a fixed navigation rail, a slim context bar, a dark green summary hero, and light cards for discrete tasks. The same brand mark and type stack appear on the login screens.
+The approved CondoFlow-inspired visual language uses a warm sand canvas, precise navy actions, quiet white surfaces, and readable financial figures. The login and every accounting view share this system; real organization data remains distinct from the demonstration screen.
 
-**Key Characteristics:** Portuguese labels, compact task controls, generous card spacing, visible active navigation, and real data clearly distinguished from the demo.
+**Key Characteristics:** horizontal desktop navigation, compact accessible menu, colored metric accents, Portuguese task labels, and restrained depth.
 
 ## Colors
 
-Deep green anchors the hero, brand mark, and primary actions. White surfaces sit on a pale green page; restrained green tints signal selection and live organization context. Dark green ink carries primary text, muted green gray carries supporting text, and a warm red is reserved for errors.
+Navy is reserved for identity, active navigation, primary actions, and focus. Sand separates the page from white task surfaces. Overview figures may use restrained blue, green, coral, and lilac tints; those accents do not change the meaning of real values. Success and danger remain semantic.
 
-**The Green Hierarchy Rule.** Use the dark green for primary action and identity; use pale green for selected or supporting states.
+**The Quiet Accent Rule.** Color clarifies a metric or state; it does not turn every card into a primary action.
 
 ## Typography
 
-Arial with Helvetica and sans-serif fallbacks serves both display and body text. Page headings are bold with tight tracking; section headings are smaller; labels and status eyebrows are compact, often uppercase with wider tracking. Figures are larger and tighter tracked to scan quickly.
+Geist is the interface font. Geist Mono is limited to compact metadata and codes. Headings use a tight, confident hierarchy; figures are tabular and prominent; supporting text stays readable without competing with totals.
 
 ## Layout
 
-The desktop shell has a 258px sidebar and a 74px top bar. The main content is centered and padded, with a 1280px maximum in the authenticated workspace. The overview uses four equal metric cards and two insight columns. At 720px the sidebar becomes a menu drawer, metrics become two columns, and insights stack. Form panels keep one task in view at a time.
+The authenticated shell uses a sticky horizontal header, organization selector, seven role-filtered destinations, a small context row, and a centered content area up to 1392px. At widths through 1180px, the desktop destinations collapse into a bounded, scrollable dialog. At 390px, the four overview metrics form two columns and two rows. Tables can scroll within their own surface without widening the page.
 
 ## Elevation & Depth
 
-Depth is quiet: white cards have thin pale borders and diffuse low opacity shadows. The dark hero carries a slightly stronger shadow; the login card uses a broad ambient shadow. Focus is shown with a visible green outline rather than elevation.
+Thin neutral borders and low ambient shadows distinguish task surfaces. The compact menu uses a stronger shadow and dimmed backdrop; the backdrop blocks background interaction while the dialog is open.
 
 ## Shapes
 
-Controls have gently rounded corners, cards use larger rounded corners, and status badges are pills. The brand mark is a rounded square. Fine borders separate content without adding visual weight.
+Cards are softly rounded; controls use smaller radii; primary actions and active navigation may be pills. Focus is shown with a visible blue outline, not a shadow alone.
 
 ## Components
 
 ### Navigation
 
-Sidebar links are compact rounded rows with icons. Hover adds a pale green background; the active view uses a stronger pale green fill and dark green text. On mobile, the drawer overlays the page and can be dismissed through its backdrop or close control.
+The desktop header is horizontal and the compact menu contains the same authorized destinations. The menu supports Escape, focus return, and internal scrolling on short screens.
 
 ### Buttons and fields
 
-Primary submit buttons are dark green with white text; secondary task buttons are pale green with dark green text. Inputs are white with a pale green border and compact rounded corners. Hover darkens or enriches the green; keyboard focus has a three pixel green outline.
+Primary actions use navy and white; secondary controls use pale blue or a neutral outline. Fields are white with a clear border and visible focus ring. Errors remain actionable and legible.
 
 ### Cards and status
 
-Metric and task cards use white backgrounds, thin borders, soft shadows, and regular panel padding. The hero uses dark green with white content and a translucent balance tile. Status badges are small green pills. Errors use a warm red message on a pale peach surface.
+Financial cards share white surfaces, neutral borders, and regular spacing. The four overview cards use distinct subtle tints. Status is conveyed by text as well as color.
 
 ## Do's and Don'ts
 
-### Do:
-
-- **Do** carry the demo's green mark, sidebar, top bar, and card language into authenticated screens.
-- **Do** use actual organization data and plain Portuguese labels in the live workspace.
-- **Do** keep primary actions and active navigation visibly distinct.
-
-### Don't:
-
-- **Don't** introduce a separate visual identity for login or accounting modules.
-- **Don't** present demo figures as live financial data.
+- **Do** keep the approved sand, navy, Geist, and colored metric accents consistent across login and accounting views.
+- **Do** preserve actual financial values, permissions, and Portuguese labels.
+- **Don't** revive the previous green sidebar in the authenticated workspace.
+- **Don't** use demonstration figures as live data.

@@ -1386,7 +1386,12 @@ select:focus-visible {
   padding: 0;
 }
 .accounting-backdrop {
-  display: none;
+  display: block;
+  position: fixed;
+  inset: 0;
+  z-index: 45;
+  border: 0;
+  background: rgba(11, 34, 23, 0.4);
 }
 .accounting-signout {
   margin: 14px 12px 0;
@@ -1824,14 +1829,6 @@ select:focus-visible {
   text-decoration: underline;
 }
 @media (max-width: 720px) {
-  .accounting-backdrop {
-    display: block;
-    position: fixed;
-    inset: 0;
-    z-index: 45;
-    border: 0;
-    background: rgba(11, 34, 23, 0.4);
-  }
   .accounting-content .greeting {
     align-items: flex-start;
     flex-direction: column;
@@ -2002,6 +1999,9 @@ select:focus-visible {
   top: 76px;
   right: 16px;
   width: min(330px, calc(100vw - 32px));
+  max-height: calc(100dvh - 92px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
   padding: 16px;
   border: 1px solid var(--line);
   border-radius: 16px;

@@ -183,6 +183,24 @@ describe('accounting workspace', () => {
     ).not.toBeInTheDocument()
     expect(toggle).toHaveFocus()
   })
+  it('blocks background interaction and keeps compact navigation scrollable on short screens', async () => {
+    const styles = document.createElement('style')
+    styles.id = 'test-workspace-styles'
+    styles.textContent = readFileSync(
+      resolve('src/app/globals.css'),
+      'utf8',
+    ).replace("@import 'tailwindcss';", '')
+    document.head.append(styles)
+    const user = userEvent.setup()
+    vi.stubGlobal('fetch', async () => Response.json([]))
+    render(<AccountingWorkspace organizations={organizations} />)
+    await user.click(screen.getByLabelText('Abrir menu'))
+    const dialog = screen.getByRole('dialog', { name: 'Menu principal' })
+    const backdrop = screen.getAllByLabelText('Fechar menu')[0]
+    expect(getComputedStyle(backdrop).display).not.toBe('none')
+    expect(getComputedStyle(dialog).overflowY).toBe('auto')
+    expect(getComputedStyle(dialog).maxHeight).toContain('vh')
+  })
   it('closes the compact menu after selecting a view', async () => {
     const user = userEvent.setup()
     vi.stubGlobal('fetch', async () => Response.json([]))
