@@ -2,8 +2,36 @@ node_modules/
 .next/
 out/
 coverage/
+.turbo/
+dist/
 .env*
 !.env.example
 *.tsbuildinfo
 .DS_Store
-.vercel
+.vercel/
+
+# Local logs, editor state, and temporary files
+*.log
+*.bak
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.superpowers/
+uploads/
+exports/
+backups/
+
+# Local databases, exports, and credentials
+*.sqlite
+*.sqlite3
+*.db
+*.dump
+*.sql.gz
+*.pem
+*.key
+*.p12
+*.pfx
+*credentials*.json
+*service-account*.json
